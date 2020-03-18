@@ -13,7 +13,7 @@ def train_test(dataframe_in, fraction):
   data = dataframe_in.copy()
   test = data.sample(frac=fraction)
   test = test.reset_index()
-  train = data.drop(test.index)
+  train = data.drop(test.iloc[:,0].values)
   train = train.reset_index(drop=True)
   test = test.drop(test.columns[0], axis= 1)
   return train, test
