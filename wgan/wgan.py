@@ -125,7 +125,7 @@ class wgan:
 
 
     def sample_df(self, n, temperature = 0.2, hard = True, scaled = False):
-        array_sample = sample(n, temperature, hard).numpy()
+        array_sample = self.sample(n, temperature, hard).numpy()
         df_sample = pd.DataFrame(array_sample, columns=self.oht_shuff_cols)
         
         if not scaled:
@@ -145,7 +145,7 @@ class wgan:
         return sample
     
     
-
+    '''
     def train(self, Dataframe, epochs, cat_cols = [], cont_cols = [], hard = True, batch_size = 32, shuffle = True):
         df = Dataframe.copy()
         self.cat_cols = cat_cols
@@ -166,10 +166,6 @@ class wgan:
         dataset = df_to_dataset(df, shuffle, batch_size)
         self.train_ds(dataset, epochs, self.cat_dims, hard)
 
-
-
-
-
     
     def train_ds(self, dataset, epochs, cat_dims = (), hard = True):
 
@@ -189,6 +185,53 @@ class wgan:
                 #checkpoint.save(file_prefix = checkpoint_prefix)
             
                 print('Time for epoch {} is {} sec \n with critic loss: {} and generator loss {}'.format(epoch+1, time.time()-start,c_loss, g_loss))
+    '''
+
+    def train(self, Dataframe, epochs, cat_cols = [], cont_cols = [], hard = True, batch_size = 32, shuffle = True):
+        df = Dataframe.copy()
+        self.cat_cols = cat_cols
+        self.orignal_order_cols = list(df.columns) ## For restoring original order of data
+        temp_li = []
+        
+        for cat in cat_cols:
+            temp_li.append(len(df[cat].unique()))
+        self.cat_dims = tuple(temp_li)
+
+        df = data_reorder(df, self.cat_cols)
+        dftest = df.copy()
+        self.scaler = dataScaler()
+        df = self.scaler.transform(df, cont_cols, self.cat_cols)
+        df = df.astype('float32')
+        self.oht_shuff_cols = list(df.columns)
+        dataset = df_to_dataset(df, shuffle, batch_size)
+        self.train_ds(dataset, epochs, len(df), batch_size, self.cat_dims, hard)
+
+
+      
+      
+
+    def train_ds(self, dataset, epochs, n_data, batch_size = 32, cat_dims = (), hard = True):
+
+        self.cat_dims = cat_dims
+        #iter_per_epoch =  math.ceil(n_data/batch_size)
+        for epoch in range(epochs):
+            start = time.time()
+            g_loss = 0
+            c_loss = 0
+            counter = 0
+            for data_batch in dataset:
+                c_loss = self.train_step_c(data_batch, hard)
+                
+                if counter % self.n_critic == 0:
+                    g_loss = self.train_step_g(batch_size, hard)
+                counter += 1
+            
+            if (epoch + 1) % 5 == 0:
+            
+                #checkpoint.save(file_prefix = checkpoint_prefix)
+            
+                print('Time for epoch {} is {} sec \n with critic loss: {} and generator loss {}'.format(epoch+1, time.time()-start,c_loss, g_loss))
+            dataset = dataset.shuffle(buffer_size=10000)
 
 
     @tf.function

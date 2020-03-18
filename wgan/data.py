@@ -9,6 +9,15 @@ def df_to_dataset(dataframe_in, shuffle=True, batch_size = 32):
   ds= ds.batch(batch_size)
   return ds
 
+def train_test(dataframe_in, fraction): 
+  data = dataframe_in.copy()
+  test = data.sample(frac=fraction)
+  test = test.reset_index()
+  train = data.drop(test.index)
+  train = train.reset_index(drop=True)
+  test = test.drop(test.columns[0], axis= 1)
+  return train, test
+
 def dataset_to_df(dataset, col_names, batch = False):
   df = pd.DataFrame(columns = col_names)
   if batch:
@@ -24,6 +33,11 @@ def load_credit_data():
     data = data.drop(data.columns[0],axis=1)
     return data
 
+def load_adult_data():
+  data = pd.read_csv('C:/Users/tsjob/Documents/Python/Examensarbete/gan-thesis/Datasets/adult.csv')
+  #data = data.drop(data.columns[0], axis = 1)
+  return data
+
 def data_reorder(dataframe, cat_cols):
   #put the 
   temp = dataframe[cat_cols]
@@ -36,21 +50,30 @@ class dataScaler:
   def __init__(self):
     self.std_scaler = preprocessing.StandardScaler()
     self.oht_scaler = preprocessing.OneHotEncoder()
+    self.std_scaled = False
+    self.oht_scaled = False
 
   def transform(self, df_in, cont_cols, cat_cols, fit = True):
     df = df_in.copy()
-    df = self.std_scale(df, cont_cols, fit)
-    df = self.oht_transform(df, cat_cols, fit)
+    
+    if len(cont_cols) != 0:
+      df = self.std_scale(df, cont_cols, fit)
+    if len(cat_cols) != 0:
+      df = self.oht_transform(df, cat_cols, fit)
+      
     return df
 
   def inverse_transfrom(self, df_in):
     df = df_in.copy()
-    df = self.inv_std_scale(df)
-    df = self.inv_oht_transform(df)
+    if self.std_scaled:
+      df = self.inv_std_scale(df)
+    if self.oht_scaled:
+      df = self.inv_oht_transform(df)
     return df
   
   def oht_transform(self, df_in, cat_cols, fit = True):
     df = df_in.copy()
+    self.oht_scaled = True
     self.cat_cols = cat_cols
     self.oht_scaler.fit(df[self.cat_cols])
     
@@ -72,6 +95,7 @@ class dataScaler:
     
   def std_scale(self, df_in, cont_cols, fit = True):
     df = df_in.copy()
+    self.std_scaled = True
     if fit:
       self.cont_cols = cont_cols
       self.std_scaler.fit(df[self.cont_cols])

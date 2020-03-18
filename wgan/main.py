@@ -40,7 +40,8 @@ def main():
     int_cols = ['Cards', 'Age', 'Education']
     cont_cols = ['Income', 'Limit', 'Rating','Balance'] 
     cols_to_scale = cont_cols + int_cols
-    my_wgan.train(dataframe, 100, cat_cols, cols_to_scale)
+    my_wgan.train2(dataframe, 100, cat_cols, cols_to_scale)
+
 
 
 
