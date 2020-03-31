@@ -1,10 +1,19 @@
 import pandas as pd
 import os
+import sys
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), os.path.pardir))
 import json
 import shutil
+import numpy as np
+import random
+from datagen import * 
 
 
-def load_data(dataset):
+
+
+
+def load_data(dataset, data_params = None):
     rootname = os.path.dirname(__file__)
     pathname = os.path.join(rootname, dataset)
     filelist = ['train.csv', 'test.csv', 'data.csv', 'info.json']
@@ -13,7 +22,10 @@ def load_data(dataset):
         if os.path.exists(pathname):
             shutil.rmtree(pathname)
         os.mkdir(pathname)
-        load_adult(pathname)
+        if data_params == None:
+            dataset_load_fn[dataset](pathname)
+        else:
+            dataset_load_fn[dataset](pathname, data_params)
 
     train = pd.read_csv(os.path.join(pathname, 'train.csv'))
     test = pd.read_csv(os.path.join(pathname, 'test.csv'))
@@ -90,9 +102,70 @@ def save_samples(df, dataset, model, force=False):
 
     df.to_csv(filename, index=False)
 
+def load_mvn_mixture(pathname, data_params):
+    n_samples = data_params['n_samples']
+    proportions = data_params['proportions']
+    means = data_params['means']
+    covs = data_params['covs']
+    if (data_params.get('seed') == None):
+        seed = np.random.randint(10000)
+    else:
+        seed = data_params.get('seed')
+        
+    df, info = mixtureGauss(n_samples, proportions, means, covs, seed)
+    info['seed'] = seed
+    
+    save_data(df, info, pathname, True)
+
+def load_mvn(pathname, data_params):
+    n_samples = data_params['n_samples']
+    mean = data_params['mean']
+    cov = data_params['cov']
+    if (data_params.get('seed') == None):
+        seed = np.random.randint(10000)
+    else:
+        seed = data_params.get('seed')
+        
+    df, info = multivariate_df(n_samples, mean, cov, seed)
+    info['seed'] = seed
+    
+    save_data(df, info, pathname, True)
+    
+
+def save_data(df, info, dirname, force = False):
+    train, test = train_test_split(df=df, n_test=int(np.floor(0.1*len(df))))
+    df.to_csv(os.path.join(dirname, 'data.csv'), index=False)
+    train.to_csv(os.path.join(dirname, 'train.csv'), index=False)
+    test.to_csv(os.path.join(dirname, 'test.csv'), index=False)
+
+    with open(os.path.join(dirname, 'info.json'), "w") as write_file:
+        print(info)
+        json.dump(info, write_file)
+    
+
+
+
+
+dataset_load_fn = {
+    'adult' : load_adult,
+    'mvn'   : load_mvn,
+    'mvn-mixture' : load_mvn_mixture
+}
 
 def main():
-    load_data('adult')
+    mvn_params = {
+        'n_samples' : 10000,
+        'mean'      : [0,0.5,1],
+        'cov'       : (np.eye(3)+0.2).tolist()
+    }
+    mvn_mix_params = {
+        'n_samples' : 10000,
+        'proportions' : [1],
+        'means'      : [[0,0.5,1]],
+        'covs'       : [(np.eye(3)+0.2).tolist()]
+    }
+    load_data('mvn', mvn_params)
+    load_data('mvn-mixture', mvn_mix_params)
 
 
 if __name__ == '__main__':
