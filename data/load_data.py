@@ -11,8 +11,6 @@ from datagen import *
 
 
 
-
-
 def load_data(dataset, data_params = None):
     rootname = os.path.dirname(__file__)
     pathname = os.path.join(rootname, dataset)
@@ -139,7 +137,6 @@ def save_data(df, info, dirname, force = False):
     test.to_csv(os.path.join(dirname, 'test.csv'), index=False)
 
     with open(os.path.join(dirname, 'info.json'), "w") as write_file:
-        print(info)
         json.dump(info, write_file)
     
 
