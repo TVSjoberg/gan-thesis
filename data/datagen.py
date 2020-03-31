@@ -1,41 +1,54 @@
 #data synth
-
+import os
+import sys
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), os.path.pardir))
 import numpy as np
 import pandas as pd
+import json
+import random
 
-
-def multivariate_df(n_samples, mean, cov):
+def multivariate_df(n_samples, mean, cov, seed = False):
     
+    if (seed != False):
+        np.random.seed(seed)
+        
     data = np.random.multivariate_normal(mean, cov, n_samples)
     
     cols = col_name_gen(len(mean), 'c')
     df = pd.DataFrame(data, columns=cols)
     info = {
+        'type' : 'mvn',
         'mean' : mean,
         'covariance' : cov
     }
     return df, info
     
 
-def mixtureGauss(n_samples, means, covs):
-   #Note that means and covs are lists of means and Covariance matrices
+def mixtureGauss(n_samples, proportions, means, covs, seed = False):
+    #Note that means and covs are lists of means and Covariance matrices
     info = {}
+    if (seed != False):
+        np.random.seed(seed)
     
     cols = col_name_gen(len(means[0]),'c')
-    df = pd.DataFrame(np.zeros((n_samples, len(means[0]))), columns = cols)
+    df = pd.DataFrame(columns = cols)
     
     for i in range(len(means)):
-        temp_df, temp_info = multivariate_df(n_samples,means[i], covs[i])
-        df += temp_df
-        info['Gaussian '+str(i)] = temp_info
+        temp_df, temp_info = multivariate_df(int(np.floor(n_samples*proportions[i])), means[i], covs[i], seed)
+        df = pd.concat((df, temp_df))
+        temp_info['Proportion of total'] = proportions[i]
+        info['dist '+ str(i)] = temp_info
     return df, info
 
 
         
-def categoricalData(n_samples, probabilities):
+def categoricalData(n_samples, probabilities, seed = False):
     #n_samples: int ,  probabilites = nested list of probabilities
     info = {}
-    
+    if (seed != False):
+        np.random.seed(seed)
+        
     column_names = col_name_gen(len(probabilities),'feature_')
     df = pd.DataFrame(columns = column_names)
     
@@ -49,13 +62,6 @@ def categoricalData(n_samples, probabilities):
         count += 1
     return df, info
 
-        
-        
-
-    
-    
-
-
 
 def col_name_gen(num_cols, common_name):
     common_name_list = [common_name]*num_cols
@@ -64,4 +70,7 @@ def col_name_gen(num_cols, common_name):
     )]
     res_list = [a + b for a, b in zip(common_name_list, num_string_list)]
     return res_list
+
+
+
     
