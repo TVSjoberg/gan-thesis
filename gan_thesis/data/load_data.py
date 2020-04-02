@@ -4,7 +4,20 @@ import json
 import shutil
 import numpy as np
 from gan_thesis.data.datagen import mixture_gauss, multivariate_df
-from definitions import DATA_DIR
+from definitions import DATA_DIR, RESULT_DIR
+
+
+class Dataset:
+    def __init__(self, train, test, data, info):
+        self.train = train
+        self.test = test
+        self.data = data
+        self.info = info
+
+    def get_columns(self):
+        d_col = self.info.get('discrete_columns')
+        c_col = self.info.get('continuous_columns')
+        return d_col, c_col
 
 
 def load_data(dataset, data_params=None):
@@ -23,12 +36,27 @@ def load_data(dataset, data_params=None):
     with open(os.path.join(pathname, 'info.json'), "r") as read_file:
         info = json.load(read_file)
 
-    return train, test, df, info
+    return Dataset(train, test, df, info)
 
 
 def load_adult(dirname, *args):
     n_test = 9600  # Same as CTGAN paper
     info = {
+        "columns": ['age',
+                    'workclass',
+                    'fnlwgt',
+                    'education',
+                    'education-num',
+                    'marital-status',
+                    'occupation',
+                    'relationship',
+                    'race',
+                    'sex',
+                    'capital-gain',
+                    'capital-loss',
+                    'hours-per-week',
+                    'native-country',
+                    'income'],
         "discrete_columns": ['workclass',
                              'education',
                              'marital-status',
@@ -38,16 +66,15 @@ def load_adult(dirname, *args):
                              'sex',
                              'native-country',
                              'income'],
-
         "continuous_columns": ['age',
                                'fnlwgt',
                                'education.num',
                                'capital-gain',
                                'capital-loss',
                                'hours-per-week'],
-        "n_test": n_test
+        "n_test": n_test,
+        "identifier": 'adult'
     }
-
     cc = info.get('columns')
     df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',
                      names=cc, header=0)
@@ -114,13 +141,12 @@ def train_test_split(df, n_test):
 
 
 def save_samples(df, dataset, model, force=False):
-    rootname = os.path.dirname(__file__)
-    pathname = os.path.join(rootname, dataset)
-    filename = os.path.join(pathname, model + '_samples.csv')
-    if os.path.isfile(filename) and not force:
+
+    fname = os.path.join(DATA_DIR, dataset, model, '{0}_{1}_samples.csv'.format(dataset, model))
+    if os.path.isfile(fname) and not force:
         return
 
-    df.to_csv(filename, index=False)
+    df.to_csv(fname, index=False)
 
 
 load_wrapper = {
