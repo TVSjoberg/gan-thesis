@@ -23,7 +23,15 @@ def multivariate_df(n_samples, mean, cov, seed = False):
         'covariance' : cov
     }
     return df, info
+
+def log_normal_df(n_samples, mean, cov, seed = False):
+    df, info = multivariate_df(n_samples, mean, cov, seed)
     
+    df = df.applymap(lambda x: np.exp(x))
+    print(df)
+    info['type'] = 'log-normal'
+    return df, info
+
 
 def mixtureGauss(n_samples, proportions, means, covs, seed = False):
     #Note that means and covs are lists of means and Covariance matrices
@@ -41,8 +49,24 @@ def mixtureGauss(n_samples, proportions, means, covs, seed = False):
         info['dist '+ str(i)] = temp_info
     return df, info
 
+def mixtureLogNormal(n_samples, proportions, means, covs, seed = False):
+    #Note that means and covs are lists of means and Covariance matrices
+    info = {}
+    if (seed != False):
+        np.random.seed(seed)
+    
+    cols = col_name_gen(len(means[0]),'c')
+    df = pd.DataFrame(columns = cols)
+    
+    for i in range(len(means)):
+        temp_df, temp_info = log_normal_df(int(np.floor(n_samples*proportions[i])), means[i], covs[i], seed)
+        df = pd.concat((df, temp_df))
+        temp_info['Proportion of total'] = proportions[i]
+        info['dist '+ str(i)] = temp_info
+    return df, info
 
-        
+
+
 def categoricalData(n_samples, probabilities, seed = False):
     #n_samples: int ,  probabilites = nested list of probabilities
     info = {}
@@ -61,6 +85,7 @@ def categoricalData(n_samples, probabilities, seed = False):
         info[column_names[count]] = prob
         count += 1
     return df, info
+
 
 
 def col_name_gen(num_cols, common_name):

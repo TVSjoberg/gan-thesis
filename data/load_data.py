@@ -128,6 +128,36 @@ def load_mvn(pathname, data_params):
     info['seed'] = seed
     
     save_data(df, info, pathname, True)
+
+def load_ln_mixture(pathname, data_params):
+    n_samples = data_params['n_samples']
+    proportions = data_params['proportions']
+    means = data_params['means']
+    covs = data_params['covs']
+    if (data_params.get('seed') == None):
+        seed = np.random.randint(10000)
+    else:
+        seed = data_params.get('seed')
+        
+    df, info = mixtureLogNormal(n_samples, proportions, means, covs, seed)
+    info['seed'] = seed
+    
+    save_data(df, info, pathname, True)
+    
+def load_ln(pathname, data_params):
+    n_samples = data_params['n_samples']
+    mean = data_params['mean']
+    cov = data_params['cov']
+    if (data_params.get('seed') == None):
+        seed = np.random.randint(10000)
+    else:
+        seed = data_params.get('seed')
+        
+    df, info = multivariate_df(n_samples, mean, cov, seed)
+    info['seed'] = seed
+    
+    save_data(df, info, pathname, True)
+
     
 
 def save_data(df, info, dirname, force = False):
@@ -146,23 +176,25 @@ def save_data(df, info, dirname, force = False):
 dataset_load_fn = {
     'adult' : load_adult,
     'mvn'   : load_mvn,
-    'mvn-mixture' : load_mvn_mixture
+    'mvn-mixture' : load_mvn_mixture,
+    'ln' : load_ln,
+    'ln-mixture' : load_ln_mixture
 }
 
 def main():
-    mvn_params = {
+    ln_params = {
         'n_samples' : 10000,
         'mean'      : [0,0.5,1],
         'cov'       : (np.eye(3)+0.2).tolist()
     }
-    mvn_mix_params = {
+    ln_mix_params = {
         'n_samples' : 10000,
-        'proportions' : [1],
-        'means'      : [[0,0.5,1]],
-        'covs'       : [(np.eye(3)+0.2).tolist()]
+        'proportions' : [0.5, 0.5],
+        'means'      : [[0,0.5,1], [2,3,5]],
+        'covs'       : [(np.eye(3)+0.2).tolist(),(np.eye(3)*3+1).tolist()]
     }
-    load_data('mvn', mvn_params)
-    load_data('mvn-mixture', mvn_mix_params)
+    load_data('ln', ln_params)
+    load_data('ln-mixture', ln_mix_params)
 
 
 if __name__ == '__main__':
