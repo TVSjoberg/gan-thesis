@@ -38,7 +38,7 @@ def load_credit_data():
 
 
 def load_adult_data():
-    data = pd.read_csv('C:/Users/tsjob/Documents/Python/Examensarbete/gan-thesis/Datasets/adult.csv')
+    data = pd.read_csv('C:/Users/tsjob/Documents/Python/Examensarbete/gan_thesis/datasets/adult.csv')
     # data = data.drop(data.columns[0], axis = 1)
     return data
 

@@ -1,7 +1,6 @@
 import os
 import pickle
 import time
-import tarfile
 from functools import partial
 
 import pandas as pd
