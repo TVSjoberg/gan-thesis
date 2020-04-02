@@ -1,6 +1,6 @@
 from ctgan import CTGANSynthesizer
 from data.load_data import *
-from models.general.utils import save, load
+from models.general.utils import save_model, load_model
 import os
 import pandas as pd
 from evaluation.machine_learning import plot_predictions_by_dimension
@@ -84,11 +84,11 @@ def main():
 
     # Train or load CTGAN model
     if os.path.isfile(filename):
-        my_ctgan = load(filename)
+        my_ctgan = load_model(filename)
         print('Successfully loaded old CTGAN model from {0}'.format(filename))
     else:
         my_ctgan = build_and_train(params=params)
-        save(my_ctgan, filename, force=True)
+        save_model(my_ctgan, filename, force=True)
         print('Saved the CTGAN model at {0}'.format(filename))
 
     # Sample from model

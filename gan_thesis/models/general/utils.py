@@ -1,8 +1,9 @@
 import os
 import pickle
+import json
 
 
-def load(path):
+def load_model(path):
     """Loads a previous model from the given path"""
     if not os.path.isfile(path):
         print('No model is saved at the specified path.')
@@ -12,7 +13,7 @@ def load(path):
     return model
 
 
-def save(model, path, force=False):
+def save_model(model, path, force=False):
     """Save the fitted model at the given path."""
     if os.path.exists(path) and not force:
         print('The indicated path already exists. Use `force=True` to overwrite.')
@@ -26,3 +27,23 @@ def save(model, path, force=False):
         pickle.dump(model, f)
 
     print('Model saved successfully.')
+
+
+def save_json(result, path):
+    """Save json at the given path."""
+    base_path = os.path.dirname(path)
+    if not os.path.exists(base_path):
+        os.makedirs(base_path)
+
+    with open(path, 'w') as f:
+        json.dump(result, f)
+
+
+def save_csv(result, path):
+    """Save csv at the given path."""
+    base_path = os.path.dirname(path)
+    if not os.path.exists(base_path):
+        os.makedirs(base_path)
+
+    with open(path, 'w') as f:
+        csv.dump(result, f)
