@@ -3,8 +3,8 @@ import os
 import json
 import shutil
 import numpy as np
-from gan_thesis.data.datagen import mixture_gauss, multivariate_df
-from definitions import DATA_DIR, RESULT_DIR
+from gan_thesis.data.datagen import *
+from definitions import DATA_DIR
 
 
 class Dataset:
@@ -57,6 +57,7 @@ def load_adult(dirname, *args):
                     'hours-per-week',
                     'native-country',
                     'income'],
+
         "discrete_columns": ['workclass',
                              'education',
                              'marital-status',
@@ -66,6 +67,7 @@ def load_adult(dirname, *args):
                              'sex',
                              'native-country',
                              'income'],
+
         "continuous_columns": ['age',
                                'fnlwgt',
                                'education.num',
@@ -75,6 +77,7 @@ def load_adult(dirname, *args):
         "n_test": n_test,
         "identifier": 'adult'
     }
+
     cc = info.get('columns')
     df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',
                      names=cc, header=0)
@@ -103,7 +106,7 @@ def load_mvn_mixture(pathname, data_params):
     info['continuous_columns'] = df.columns.to_list()
     info['discrete_columns'] = []
 
-    save_data(df, info, pathname, True)
+    save_data(df, info, pathname)
 
 
 def load_mvn(pathname, data_params):
@@ -119,7 +122,42 @@ def load_mvn(pathname, data_params):
     info['seed'] = seed
     info['continuous_columns'] = df.columns.to_list()
     info['discrete_columns'] = []
-    save_data(df, info, pathname, True)
+    save_data(df, info, pathname)
+
+
+def load_ln_mixture(pathname, data_params):
+    n_samples = data_params['n_samples']
+    proportions = data_params['proportions']
+    means = data_params['means']
+    covs = data_params['covs']
+    if data_params.get('seed') is None:
+        seed = np.random.randint(10000)
+    else:
+        seed = data_params.get('seed')
+
+    df, info = mixture_log_normal(n_samples, proportions, means, covs, seed)
+    info['seed'] = seed
+    info['continuous_columns'] = df.columns.to_list()
+    info['discrete_columns'] = []
+
+    save_data(df, info, pathname)
+
+
+def load_ln(pathname, data_params):
+    n_samples = data_params['n_samples']
+    mean = data_params['mean']
+    cov = data_params['cov']
+    if data_params.get('seed') is None:
+        seed = np.random.randint(10000)
+    else:
+        seed = data_params.get('seed')
+
+    df, info = log_normal_df(n_samples, mean, cov, seed)
+    info['seed'] = seed
+    info['continuous_columns'] = df.columns.to_list()
+    info['discrete_columns'] = []
+
+    save_data(df, info, pathname)
 
 
 def save_data(df, info, dirname):
@@ -141,7 +179,6 @@ def train_test_split(df, n_test):
 
 
 def save_samples(df, dataset, model, force=False):
-
     fname = os.path.join(DATA_DIR, dataset, model, '{0}_{1}_samples.csv'.format(dataset, model))
     if os.path.isfile(fname) and not force:
         return
@@ -152,24 +189,26 @@ def save_samples(df, dataset, model, force=False):
 load_wrapper = {
     'adult': load_adult,
     'mvn': load_mvn,
-    'mvn-mixture': load_mvn_mixture
+    'mvn-mixture': load_mvn_mixture,
+    'ln': load_ln,
+    'ln-mixture': load_ln_mixture
 }
 
 
 def main():
-    mvn_params = {
+    ln_params = {
         'n_samples': 10000,
         'mean': [0, 0.5, 1],
         'cov': (np.eye(3) + 0.2).tolist()
     }
-    mvn_mix_params = {
+    ln_mix_params = {
         'n_samples': 10000,
-        'proportions': [1],
-        'means': [[0, 0.5, 1]],
-        'covs': [(np.eye(3) + 0.2).tolist()]
+        'proportions': [0.5, 0.5],
+        'means': [[0, 0.5, 1], [2, 3, 5]],
+        'covs': [(np.eye(3) + 0.2).tolist(), (np.eye(3) * 3 + 1).tolist()]
     }
-    load_data('mvn', mvn_params)
-    load_data('mvn-mixture', mvn_mix_params)
+    load_data('ln', ln_params)
+    load_data('ln-mixture', ln_mix_params)
 
 
 if __name__ == '__main__':
