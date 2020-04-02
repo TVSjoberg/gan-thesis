@@ -3,9 +3,10 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 import os
+from definitions import RESULT_DIR
 
 
-def plot_marginals(real, synthetic, identifier=None):
+def plot_marginals(real, synthetic, dataset, model):
     cols = synthetic.columns
 
     i_cont = real.columns.get_indexer(real.select_dtypes(np.number).columns)
@@ -22,13 +23,11 @@ def plot_marginals(real, synthetic, identifier=None):
         sns.distplot(real.iloc[:, i], label="Real")
         plt.legend()
 
-    if type(identifier) == str:
-        rootname = os.path.dirname(__file__)
-        filepath = os.path.join(rootname, '{0}_1'.format(identifier))
-        basepath = os.path.dirname(filepath)
-        if not os.path.exists(basepath):
-            os.makedirs(basepath)
-        plt.savefig(filepath)
+    basepath = os.path.join(RESULT_DIR, dataset, model)
+    filepath = os.path.join(basepath, '{0}_{1}_c_marginals.png'.format(dataset, model))
+    if not os.path.exists(basepath):
+        os.makedirs(basepath)
+    plt.savefig(filepath)
 
     temp = real.copy()
     temp2 = synthetic.copy()
@@ -49,10 +48,8 @@ def plot_marginals(real, synthetic, identifier=None):
         sns.countplot(x=real.columns.tolist()[i], data=result, hue='Synthetic')
         plt.legend()
 
-    if type(identifier) == str:
-        rootname = os.path.dirname(__file__)
-        filepath = os.path.join(rootname, '{0}_2'.format(identifier))
-        basepath = os.path.dirname(filepath)
-        if not os.path.exists(basepath):
-            os.makedirs(basepath)
-        plt.savefig(filepath)
+    basepath = os.path.join(RESULT_DIR, dataset, model)
+    filepath = os.path.join(basepath, '{0}_{1}_d_marginals.png'.format(dataset, model))
+    if not os.path.exists(basepath):
+        os.makedirs(basepath)
+    plt.savefig(filepath)

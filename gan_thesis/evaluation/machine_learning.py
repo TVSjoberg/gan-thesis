@@ -1,14 +1,14 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-import json
-import os
 import pandas as pd
-
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.ensemble import AdaBoostClassifier, AdaBoostRegressor
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.metrics import accuracy_score, f1_score, r2_score
+from sklearn.neural_network import MLPClassifier, MLPRegressor
+from definitions import RESULT_DIR
 
 
 def prediction_score(train_x, train_y, test_x, test_y, metric, model, target):
@@ -95,11 +95,11 @@ def abline(slope, intercept):
     plt.plot(x, y, '--')
 
 
-def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, continuous_columns, identifier=None):
+def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, continuous_columns, dataset, model):
     score_y_by_dimension = predictions_by_dimension(samples, data_test, discrete_columns, continuous_columns)
     score_x_by_dimension = predictions_by_dimension(real, data_test, discrete_columns, continuous_columns)
-    #score_y_by_dimension[score_y_by_dimension < 0] = 0
-    #score_x_by_dimension[score_x_by_dimension < 0] = 0
+    # score_y_by_dimension[score_y_by_dimension < 0] = 0
+    # score_x_by_dimension[score_x_by_dimension < 0] = 0
     mean_x_by_dimension = score_x_by_dimension.mean(axis=0)
     mean_y_by_dimension = score_y_by_dimension.mean(axis=0)
 
@@ -111,16 +111,14 @@ def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, co
     ax.set_xlabel("Real features")
     abline(1, 0)
 
-    if type(identifier) == str:
-        rootname = os.path.dirname(__file__)
-        filepath = os.path.join(rootname, identifier)
-        basepath = os.path.dirname(filepath)
-        if not os.path.exists(basepath):
-            os.makedirs(basepath)
+    basepath = os.path.join(RESULT_DIR, dataset, model)
+    filepath = os.path.join(basepath, '{0}_{1}_ml_efficiency.png'.format(dataset, model))
+    if not os.path.exists(basepath):
+        os.makedirs(basepath)
 
-        plt.savefig(filepath)
+    plt.savefig(filepath)
 
-        score_x_by_dimension.to_csv('{0}_real.csv'.format(filepath), index=False)
-        score_y_by_dimension.to_csv('{0}_samples.csv'.format(filepath), index=False)
+    score_x_by_dimension.to_csv(os.path.join(basepath, '{0}_{1}_ml_real.csv'.format(dataset, model)), index=False)
+    score_y_by_dimension.to_csv(os.path.join(basepath, '{0}_{1}_ml_samples.csv'.format(dataset, model)), index=False)
 
     return score_x_by_dimension, score_y_by_dimension
