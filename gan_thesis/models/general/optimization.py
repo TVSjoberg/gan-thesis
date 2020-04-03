@@ -3,7 +3,7 @@ import os
 from gan_thesis.models.general.utils import save_json, HiddenPrints
 
 
-def optimize(space, file_path=None, max_evals=100):
+def optimize(space, file_path=None, max_evals=5):
     if space.get('model') == 'ctgan':
         from gan_thesis.models.ctgan.synthesizer import build_and_train, sampler, optim_loss
     # elif space.get('model') == 'tgan':
@@ -20,7 +20,7 @@ def optimize(space, file_path=None, max_evals=100):
         loss = optim_loss(samples, params)
 
         params['loss'] = loss
-        save_json(params, os.path.join(__file__, ))
+        # save_json(params, os.path.join(__file__, ))
 
         del my_gan, samples
 

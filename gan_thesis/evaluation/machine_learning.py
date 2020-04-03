@@ -31,11 +31,11 @@ def prediction_score(train_x, train_y, test_x, test_y, metric, model, target):
     m.fit(train_x, train_y)
     test = m.predict(test_x)
     if metric == "f1":
-        return np.max(f1_score(test_y, test, average='micro'), 0)
+        return np.max([f1_score(test_y, test, average='micro'), 0])
     elif metric == "accuracy":
-        return np.max(accuracy_score(test_y, test), 0)
+        return np.max([accuracy_score(test_y, test), 0])
     elif metric == "r2":
-        return np.max(r2_score(test_y, test), 0)
+        return np.max([r2_score(test_y, test), 0])
     else:
         raise Exception("Metric not recognized.")
 
@@ -73,6 +73,7 @@ def predictions_by_dimension(train, test, discrete_columns, continuous_columns):
                     one_hot_test, test.iloc[:, feature_index],
                     metric="f1", model=method, target='discrete'
                 ))
+                print(temp_scores)
             prediction_scores.loc[:, features[feature_index]] = temp_scores
         elif features[feature_index] in continuous_columns:
             temp_scores = []
@@ -82,6 +83,7 @@ def predictions_by_dimension(train, test, discrete_columns, continuous_columns):
                     one_hot_test, test.iloc[:, feature_index],
                     metric="r2", model=method, target='continuous'
                 ))
+                print(temp_scores)
             prediction_scores.loc[:, features[feature_index]] = temp_scores
     return prediction_scores
 
@@ -115,7 +117,7 @@ def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, co
 
     plt.savefig(filepath)
 
-    score_x_by_dimension.to_csv(os.path.join(basepath, '{0}_{1}_ml_real.csv'.format(dataset, model)), index=False)
-    score_y_by_dimension.to_csv(os.path.join(basepath, '{0}_{1}_ml_samples.csv'.format(dataset, model)), index=False)
+    score_x_by_dimension.to_csv(os.path.join(basepath, '{0}_{1}_ml_real.csv'.format(dataset, model)), index=True)
+    score_y_by_dimension.to_csv(os.path.join(basepath, '{0}_{1}_ml_samples.csv'.format(dataset, model)), index=True)
 
     return score_x_by_dimension, score_y_by_dimension

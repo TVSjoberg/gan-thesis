@@ -14,19 +14,22 @@ EPOCHS = 1
 
 # HYPEROPT SPACE
 space = {
-    'embedding_dim': 2 ** hp.quniform('embedding_dim', 4, 9, 1),
+    'embedding_dim': hp.quniform('embedding_dim', 16, 512, 2),
     'gen_num_layers': hp.quniform('gen_num_layers', 1, 5, 1),
-    'gen_layer_sizes': 2 ** hp.quniform('gen_layer_sizes', 4, 9, 1),
+    'gen_layer_sizes': hp.quniform('gen_layer_sizes', 16, 512, 2),
     'crit_num_layers': hp.quniform('crit_num_layers', 1, 5, 1),
-    'crit_layer_sizes': 2 ** hp.quniform('crit_layer_sizes', 4, 9, 1),
+    'crit_layer_sizes': hp.quniform('crit_layer_sizes', 16, 512, 2),
     'l2scale': hp.loguniform('l2scale', np.log10(10 ** -6), np.log10(0.2)),
-    'batch_size': 50 * hp.quniform('batch_size', 1, 50, 1)
+    'batch_size': hp.quniform('batch_size', 50, 500, 50)
 }
 
 
 def build_and_train(params):
+
     gen_layers = [int(params['gen_layer_sizes'])] * int(params['gen_num_layers'])
+    print(gen_layers)
     crit_layers = [int(params['crit_layer_sizes'])] * int(params['crit_num_layers'])
+    print(crit_layers)
     my_ctgan = CTGANSynthesizer(embedding_dim=int(params['embedding_dim']),
                                 gen_dim=gen_layers,
                                 dis_dim=crit_layers,
@@ -69,7 +72,7 @@ def main(params=None, optim=True):
     if params is None:
         params = {
             # Regular parameters
-            'training_set': 'adult',
+            'training_set': 'ln',
             'eval': 'all',
             # NN Hyperparameters
             'embedding_dim': 128,
@@ -102,6 +105,7 @@ def main(params=None, optim=True):
             print('Successfully loaded old optimized CTGAN model from {0}'.format(filename))
         else:
             best, trials = optimize(params, filename+'.json')
+            best['dataset'] = dataset
             my_ctgan = build_and_train(best)
             save_model(my_ctgan, filename, force=True)
             print('Saved the optimized CTGAN model at {0}'.format(filename))
