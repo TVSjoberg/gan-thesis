@@ -7,6 +7,19 @@ from gan_thesis.data.datagen import *
 from definitions import DATA_DIR
 
 
+class Dataset:
+    def __init__(self, train, test, data, info):
+        self.train = train
+        self.test = test
+        self.data = data
+        self.info = info
+
+    def get_columns(self):
+        d_col = self.info.get('discrete_columns')
+        c_col = self.info.get('continuous_columns')
+        return d_col, c_col
+
+
 def load_data(dataset, data_params=None):
     pathname = os.path.join(DATA_DIR, dataset)
     filelist = ['train.csv', 'test.csv', 'data.csv', 'info.json']
@@ -23,12 +36,28 @@ def load_data(dataset, data_params=None):
     with open(os.path.join(pathname, 'info.json'), "r") as read_file:
         info = json.load(read_file)
 
-    return train, test, df, info
+    return Dataset(train, test, df, info)
 
 
 def load_adult(dirname, *args):
     n_test = 9600  # Same as CTGAN paper
     info = {
+        "columns": ['age',
+                    'workclass',
+                    'fnlwgt',
+                    'education',
+                    'education-num',
+                    'marital-status',
+                    'occupation',
+                    'relationship',
+                    'race',
+                    'sex',
+                    'capital-gain',
+                    'capital-loss',
+                    'hours-per-week',
+                    'native-country',
+                    'income'],
+
         "discrete_columns": ['workclass',
                              'education',
                              'marital-status',
@@ -45,7 +74,8 @@ def load_adult(dirname, *args):
                                'capital-gain',
                                'capital-loss',
                                'hours-per-week'],
-        "n_test": n_test
+        "n_test": n_test,
+        "identifier": 'adult'
     }
 
     cc = info.get('columns')
@@ -76,7 +106,7 @@ def load_mvn_mixture(pathname, data_params):
     info['continuous_columns'] = df.columns.to_list()
     info['discrete_columns'] = []
 
-    save_data(df, info, pathname, True)
+    save_data(df, info, pathname)
 
 
 def load_mvn(pathname, data_params):
@@ -92,38 +122,42 @@ def load_mvn(pathname, data_params):
     info['seed'] = seed
     info['continuous_columns'] = df.columns.to_list()
     info['discrete_columns'] = []
-    save_data(df, info, pathname, True)
+    save_data(df, info, pathname)
+
 
 def load_ln_mixture(pathname, data_params):
     n_samples = data_params['n_samples']
     proportions = data_params['proportions']
     means = data_params['means']
     covs = data_params['covs']
-    if (data_params.get('seed') == None):
+    if data_params.get('seed') is None:
         seed = np.random.randint(10000)
     else:
         seed = data_params.get('seed')
-        
+
     df, info = mixture_log_normal(n_samples, proportions, means, covs, seed)
     info['seed'] = seed
-    
-    save_data(df, info, pathname, True)
-    
+    info['continuous_columns'] = df.columns.to_list()
+    info['discrete_columns'] = []
+
+    save_data(df, info, pathname)
+
+
 def load_ln(pathname, data_params):
     n_samples = data_params['n_samples']
     mean = data_params['mean']
     cov = data_params['cov']
-    if (data_params.get('seed') == None):
+    if data_params.get('seed') is None:
         seed = np.random.randint(10000)
     else:
         seed = data_params.get('seed')
-        
+
     df, info = log_normal_df(n_samples, mean, cov, seed)
     info['seed'] = seed
-    
-    save_data(df, info, pathname, True)
+    info['continuous_columns'] = df.columns.to_list()
+    info['discrete_columns'] = []
 
-    
+    save_data(df, info, pathname)
 
 
 def save_data(df, info, dirname):
@@ -145,35 +179,33 @@ def train_test_split(df, n_test):
 
 
 def save_samples(df, dataset, model, force=False):
-    rootname = os.path.dirname(__file__)
-    pathname = os.path.join(rootname, dataset)
-    filename = os.path.join(pathname, model + '_samples.csv')
-    if os.path.isfile(filename) and not force:
+    fname = os.path.join(DATA_DIR, dataset, model, '{0}_{1}_samples.csv'.format(dataset, model))
+    if os.path.isfile(fname) and not force:
         return
 
-    df.to_csv(filename, index=False)
+    df.to_csv(fname, index=False)
 
 
 load_wrapper = {
-    'adult' : load_adult,
-    'mvn'   : load_mvn,
-    'mvn-mixture' : load_mvn_mixture,
-    'ln' : load_ln,
-    'ln-mixture' : load_ln_mixture
+    'adult': load_adult,
+    'mvn': load_mvn,
+    'mvn-mixture': load_mvn_mixture,
+    'ln': load_ln,
+    'ln-mixture': load_ln_mixture
 }
 
 
 def main():
     ln_params = {
-        'n_samples' : 10000,
-        'mean'      : [0,0.5,1],
-        'cov'       : (np.eye(3)+0.2).tolist()
+        'n_samples': 10000,
+        'mean': [0, 0.5, 1],
+        'cov': (np.eye(3) + 0.2).tolist()
     }
     ln_mix_params = {
-        'n_samples' : 10000,
-        'proportions' : [0.5, 0.5],
-        'means'      : [[0,0.5,1], [2,3,5]],
-        'covs'       : [(np.eye(3)+0.2).tolist(),(np.eye(3)*3+1).tolist()]
+        'n_samples': 10000,
+        'proportions': [0.5, 0.5],
+        'means': [[0, 0.5, 1], [2, 3, 5]],
+        'covs': [(np.eye(3) + 0.2).tolist(), (np.eye(3) * 3 + 1).tolist()]
     }
     load_data('ln', ln_params)
     load_data('ln-mixture', ln_mix_params)

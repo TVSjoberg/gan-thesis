@@ -1,5 +1,4 @@
 import os
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -32,11 +31,11 @@ def prediction_score(train_x, train_y, test_x, test_y, metric, model, target):
     m.fit(train_x, train_y)
     test = m.predict(test_x)
     if metric == "f1":
-        return f1_score(test_y, test, average='micro')
+        return np.max(f1_score(test_y, test, average='micro'), 0)
     elif metric == "accuracy":
-        return accuracy_score(test_y, test)
+        return np.max(accuracy_score(test_y, test), 0)
     elif metric == "r2":
-        return r2_score(test_y, test)
+        return np.max(r2_score(test_y, test), 0)
     else:
         raise Exception("Metric not recognized.")
 
@@ -98,8 +97,6 @@ def abline(slope, intercept):
 def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, continuous_columns, dataset, model):
     score_y_by_dimension = predictions_by_dimension(samples, data_test, discrete_columns, continuous_columns)
     score_x_by_dimension = predictions_by_dimension(real, data_test, discrete_columns, continuous_columns)
-    # score_y_by_dimension[score_y_by_dimension < 0] = 0
-    # score_x_by_dimension[score_x_by_dimension < 0] = 0
     mean_x_by_dimension = score_x_by_dimension.mean(axis=0)
     mean_y_by_dimension = score_y_by_dimension.mean(axis=0)
 
