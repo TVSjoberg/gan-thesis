@@ -17,7 +17,7 @@ def optimize(space, file_path=None, max_evals=5):
         with HiddenPrints():  # Suppresses normal print functions
             my_gan = build_and_train(params)
         samples = sampler(my_gan, params)
-        loss = optim_loss(samples, params)
+        loss = optim_loss(samples.data, params)
 
         params['loss'] = loss
         # save_json(params, os.path.join(__file__, ))

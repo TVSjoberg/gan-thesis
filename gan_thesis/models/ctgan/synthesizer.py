@@ -49,8 +49,9 @@ def sampler(my_ctgan, params):
     col = d.train.columns
     samples.columns = col
     samples = samples.astype(d.train.dtypes)
+    ctgan_dataset = Dataset(d.train, d.test, samples, d.info)
 
-    return samples
+    return ctgan_dataset
 
 
 def optim_loss(samples, params):
@@ -123,7 +124,7 @@ def main(params=None, optim=True):
     # Sample from model
     print('Sampling from the CTGAN model...')
     samples = sampler(my_ctgan, params)
-    save_samples(samples, params['training_set'], model='ctgan')
+    save_samples(samples.data, params['training_set'], model='ctgan')
     print('Saved the CTGAN samples')
 
     # Evaluate fitted model
