@@ -4,4 +4,6 @@ scikit-learn
 matplotlib
 seaborn
 scipy
+hyperopt
+tensorflow==1.15
 tgan
