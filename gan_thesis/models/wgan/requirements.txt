@@ -4,6 +4,7 @@ scikit-learn
 matplotlib
 seaborn
 scipy
+hyperopt
 tensorboard==2.1.0
 tensorflow==2.1.0
 tensorflow-estimator==2.1.0

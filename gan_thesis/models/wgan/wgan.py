@@ -6,8 +6,8 @@ from functools import partial
 import pandas as pd
 from tensorflow.keras import layers
 
-from models.wgan.utils import *
-from models.wgan.data import *
+from gan_thesis.models.wgan.utils import *
+from gan_thesis.models.wgan.data import *
 
 """
 gå från dataframe till dataset, m  col_names/nums

@@ -6,16 +6,16 @@ from gan_thesis.models.general.utils import save_json, HiddenPrints
 def optimize(space, file_path=None, max_evals=5):
     if space.get('model') == 'ctgan':
         from gan_thesis.models.ctgan.synthesizer import build_and_train, sampler, optim_loss
-    # elif space.get('model') == 'tgan':
-        # from gan_thesis.models.tgan.synthesizer import build_and_train, sampler, optim_loss
+    elif space.get('model') == 'tgan':
+        from gan_thesis.models.tgan.synthesizer import build_and_train, sampler, optim_loss
     # elif space.get('model') == 'wgan':
         # from gan_thesis.models.wgan.synthesizer import build_and_train, sampler, optim_loss
 
     def objective(params):
         """Objective function for GAN Hyperparameter Tuning"""
 
-        with HiddenPrints():  # Suppresses normal print functions
-            my_gan = build_and_train(params)
+        #  with HiddenPrints():  # Suppresses normal print functions
+        my_gan = build_and_train(params)
         samples = sampler(my_gan, params)
         loss = optim_loss(samples.data, params)
 
