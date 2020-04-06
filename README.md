@@ -1,5 +1,8 @@
 # gan-thesis
 
+## Requirements
+[Python 3.7](https://www.python.org/downloads/release/python-377/)
+
 ## Install from PyPi
 After creating the corresponding virtual environments, the necessary packages can be imported automatically with the following commands:
 
