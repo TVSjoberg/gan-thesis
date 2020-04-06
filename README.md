@@ -8,6 +8,7 @@ After creating the corresponding virtual environments, the necessary packages ca
 
 ### CTGAN
 `pip install -r gan_thesis/models/ctgan/requirements.txt`
+Note that the wheel added to this git is for a Windows CPU only machine
 ### TGAN
 `pip install -r gan_thesis/models/tgan/requirements.txt`
 ### WGAN
