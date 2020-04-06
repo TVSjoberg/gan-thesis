@@ -1,9 +1,10 @@
 from ctgan import CTGANSynthesizer
 from gan_thesis.evaluation.machine_learning import plot_predictions_by_dimension
 from gan_thesis.evaluation.plot_marginals import plot_marginals
+from gan_thesis.evaluation.association import plot_association
 from gan_thesis.evaluation.pMSE import *
 from gan_thesis.data.load_data import *
-from gan_thesis.models.general.utils import save_model, load_model
+from gan_thesis.models.general.utils import save_model, load_model, save_json
 from gan_thesis.models.general.optimization import optimize
 import os
 import pandas as pd
@@ -131,11 +132,15 @@ def main(params=None, optim=True):
     if params['eval'] == 'all':
         print('Starting MLE evaluation on samples...')
         discrete_columns, continuous_columns = dataset.get_columns()
-        plot_predictions_by_dimension(real=dataset.train, samples=samples, data_test=dataset.test,
+        plot_predictions_by_dimension(real=dataset.train, samples=samples.data, data_test=dataset.test,
                                       discrete_columns=discrete_columns, continuous_columns=continuous_columns,
                                       dataset=params.get('training_set'), model='ctgan')
         print('Plotting marginals of real and sample data...')
-        plot_marginals(dataset.train, samples, params.get('training_set'), 'ctgan')
+        plot_marginals(dataset.train, samples.data, params.get('training_set'), 'ctgan')
+        print('Plotting association matrices...')
+        diff = plot_association(dataset, samples, params.get('training_set'), 'ctgan')
+        print(diff)
+        save_json(diff, os.path.join(RESULT_DIR, params.get('training_set'), 'ctgan', 'association_difference'))
 
 
 if __name__ == "__main__":
