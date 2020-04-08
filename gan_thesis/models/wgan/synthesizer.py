@@ -4,12 +4,14 @@ from gan_thesis.evaluation.pMSE import *
 from gan_thesis.data.load_data import *
 from gan_thesis.models.general.utils import save_model, load_model
 from gan_thesis.models.general.optimization import optimize
+from gan_thesis.models.wgan.wgan import *
+
 import os
 import pandas as pd
 from definitions import RESULT_DIR
 from hyperopt import hp
 
-EPOCHS = 1
+EPOCHS = 300
 
 # HYPEROPT SPACE
 space = {
@@ -26,24 +28,29 @@ space = {
 def build_and_train(params):
     gen_layers = [int(params['gen_layer_sizes'])] * int(params['gen_num_layers'])
     crit_layers = [int(params['crit_layer_sizes'])] * int(params['crit_num_layers'])
-    my_ctgan = CTGANSynthesizer(embedding_dim=int(params['embedding_dim']),
-                                gen_dim=gen_layers,
-                                dis_dim=crit_layers,
-                                batch_size=int(params['batch_size']),
-                                l2scale=params['l2scale'])
-    print('Fitting a CTGAN model for {0} epochs...'.format(EPOCHS))
     d = params.get('dataset')
-    my_ctgan.fit(d.train, d.info.get('discrete_columns'), epochs=EPOCHS)
-    print('Successfully fitted a CTGAN model')
 
-    return my_ctgan
+    params['gen_dim'] = gen_layers
+    params['crit_dim'] = crit_layers
+    
+    params['output_dim'] = d.info.get('dim')
+
+    my_wgan = WGAN(params)
+    print('Fitting a wgan model for {0} epochs...'.format(EPOCHS))
+    my_wgan.train(d.train, EPOCHS, 
+                  d.info.get('discrete_columns'), 
+                  d.info.get('continuous_columns'), 
+                  batch_size=params['batch_size'])
+    print('Successfully fitted a wgan model')
+
+    return my_wgan
 
 
-def sampler(my_ctgan, params):
+def sampler(my_wgan, params):
     d = params.get('dataset')
-    samples = my_ctgan.sample(len(d.train))
-    col = d.train.columns
-    samples.columns = col
+    samples = my_wgan.sample_df(len(d.train))
+    #col = d.train.columns
+    #samples.columns = col
     samples = samples.astype(d.train.dtypes)
 
     return samples
@@ -64,11 +71,11 @@ def optim_loss(samples, params):
     return loss
 
 
-def main(params=None, optim=True):
+def main(params=None, optim=False):
     if params is None:
         params = {
             # Regular parameters
-            'training_set': 'adult',
+            'training_set': 'mvn',
             'eval': 'all',
             # NN Hyperparameters
             'embedding_dim': 128,
@@ -76,50 +83,62 @@ def main(params=None, optim=True):
             'gen_layer_sizes': 256,
             'crit_num_layers': 2,
             'crit_layer_sizes': 256,
-            'l2scale': 10**-6,
-            'batch_size': 500
+            'mode' : 'wgan-gp',
+            'gp_const' : 10,
+            'n_critic' : 5,
+            'batch_size': 500,
         }
 
     if optim:
         params.update(space)  # Overwrite NN hyperparameters with stochastic variant from top of file
 
-    print('Starting CTGAN main script with following parameters:')
+    print('Starting wgan-gp main script with following parameters:')
     for key in params:
         print(key, params[key])
-    params['model'] = 'ctgan'
+    params['model'] = 'wgan-gp'
 
     # Load dataset
+    print(params.get('training_set'))
     dataset = load_data(params.get('training_set'))
     params['dataset'] = dataset
+    
     print('Successfully loaded dataset {0}'.format(params.get('training_set')))
 
     if optim:
-        # Optimize or load CTGAN model
+        # Optimize or load wgan model
         filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model') + '_optimized')
         if os.path.isfile(filename):
-            my_ctgan = load_model(filename)
-            print('Successfully loaded old optimized CTGAN model from {0}'.format(filename))
+            my_wgan = load_model(filename)
+            print('Successfully loaded old optimized wgan model from {0}'.format(filename))
         else:
             best, trials = optimize(params, filename+'.json')
-            my_ctgan = build_and_train(best)
-            save_model(my_ctgan, filename, force=True)
-            print('Saved the optimized CTGAN model at {0}'.format(filename))
+            my_wgan = build_and_train(best)
+            save_model(my_wgan, filename, force=True)
+            print('Saved the optimized wgan model at {0}'.format(filename))
     else:
-        # Train or load CTGAN model
+        # Train or load wgan model
         filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model'))
         if os.path.isfile(filename):
-            my_ctgan = load_model(filename)
-            print('Successfully loaded old CTGAN model from {0}'.format(filename))
+            print(filename)
+            my_wgan = load_model(filename)
+            print('Successfully loaded old wgan model from {0}'.format(filename))
         else:
-            my_ctgan = build_and_train(params=params)
-            save_model(my_ctgan, filename, force=True)
-            print('Saved the CTGAN model at {0}'.format(filename))
+            my_wgan = build_and_train(params=params)
+            try:
+                save_model(my_wgan, filename, force = True)
+                print('Saved the wgan model at {0}'.format(filename))
+            except Exception as e:
+                print('Model was not saved due to an error: {0}'.format(e))
+                os.remove(filename)
+                
+            #save_model(my_wgan, filename, force=True)
+            #print('Saved the wgan model at {0}'.format(filename))
 
     # Sample from model
-    print('Sampling from the CTGAN model...')
-    samples = sampler(my_ctgan, params)
-    save_samples(samples, params['training_set'], model='ctgan')
-    print('Saved the CTGAN samples')
+    print('Sampling from the wgan model...')
+    samples = sampler(my_wgan, params)
+    save_samples(samples, params['training_set'], model='wgan')
+    print('Saved the wgan samples')
 
     # Evaluate fitted model
     if params['eval'] == 'all':
@@ -127,9 +146,9 @@ def main(params=None, optim=True):
         discrete_columns, continuous_columns = dataset.get_columns()
         plot_predictions_by_dimension(real=dataset.train, samples=samples, data_test=dataset.test,
                                       discrete_columns=discrete_columns, continuous_columns=continuous_columns,
-                                      dataset=params.get('training_set'), model='ctgan')
+                                      dataset=params.get('training_set'), model='wgan')
         print('Plotting marginals of real and sample data...')
-        plot_marginals(dataset.train, samples, params.get('training_set'), 'ctgan')
+        plot_marginals(dataset.train, samples, params.get('training_set'), 'wgan')
 
 
 if __name__ == "__main__":

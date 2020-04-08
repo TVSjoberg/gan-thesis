@@ -14,7 +14,8 @@ def multivariate_df(n_samples, mean, cov, seed=False):
     info = {
         'type': 'mvn',
         'mean': mean,
-        'covariance': cov
+        'covariance': cov,
+        'dim' : len(mean)
     }
     return df, info
 
@@ -33,16 +34,24 @@ def mixture_gauss(n_samples, proportions, means, covs, seed=False):
     info = {}
     if seed:
         np.random.seed(seed)
-
+    
+    k = len(means)
     cols = col_name_gen(len(means[0]), 'c')
     df = pd.DataFrame(columns=cols)
 
-    for i in range(len(means)):
+    for i in range(k-1):
         temp_df, temp_info = multivariate_df(
             int(np.floor(n_samples*proportions[i])), means[i], covs[i], seed)
         df = pd.concat((df, temp_df))
         temp_info['Proportion of total'] = proportions[i]
         info['dist ' + str(i)] = temp_info
+    
+    temp_df, temp_info = multivariate_df((n_samples-len(df)), means[k-1], covs[k-1], seed)
+    df = pd.concat((df, temp_df))
+    temp_info['Proportion of total'] = proportions[k-1]
+    info['dist ' + str(k-1)] = temp_info
+    
+    info['dim'] = len(means[0])
     return df, info
 
 
@@ -52,15 +61,23 @@ def mixture_log_normal(n_samples, proportions, means, covs, seed=False):
     if seed:
         np.random.seed(seed)
 
+    k = len(means)
     cols = col_name_gen(len(means[0]), 'c')
     df = pd.DataFrame(columns=cols)
 
-    for i in range(len(means)):
+    for i in range(k-1):
         temp_df, temp_info = log_normal_df(
             int(np.floor(n_samples*proportions[i])), means[i], covs[i], seed)
         df = pd.concat((df, temp_df))
         temp_info['Proportion of total'] = proportions[i]
         info['dist ' + str(i)] = temp_info
+    
+    temp_df, temp_info = log_normal_df((n_samples-len(df), means[k-1], covs[k-1], seed))
+    df = pd.concat((df, temp_df))
+    temp_info['Proportion of total'] = proportions[k-1]
+    info['dist ' + str(i)] = temp_info
+        
+    info['dim'] = len(means[0])
     return df, info
 
 def cat_mixture_gauss(cond_df, means, covs, seed = False):
