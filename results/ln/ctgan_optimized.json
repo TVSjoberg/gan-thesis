@@ -1,0 +1,1 @@
+{"batch_size": 250.0, "crit_layer_sizes": 420.0, "crit_num_layers": 5.0, "embedding_dim": 348.0, "gen_layer_sizes": 194.0, "gen_num_layers": 2.0, "l2scale": 0.15561241720596525}

@@ -182,6 +182,9 @@ def save_samples(df, dataset, model, force=False):
     fname = os.path.join(DATA_DIR, dataset, model, '{0}_{1}_samples.csv'.format(dataset, model))
     if os.path.isfile(fname) and not force:
         return
+    base_path = os.path.dirname(fname)
+    if not os.path.exists(base_path):
+        os.makedirs(base_path)
 
     df.to_csv(fname, index=False)
 

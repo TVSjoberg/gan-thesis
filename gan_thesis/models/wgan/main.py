@@ -1,6 +1,6 @@
-from models.wgan.data import load_credit_data
+from gan_thesis.models.wgan.data import load_credit_data
 
-from models.wgan.wgan import *
+from gan_thesis.models.wgan.wgan import *
 
 
 def main():
@@ -32,7 +32,7 @@ def main():
         'n_critic': 16
     }
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+    #  os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
     my_wgan = WGAN(testing_params)
     dataframe = load_credit_data()
     cat_cols = ['Gender', 'Student', 'Married', 'Ethnicity']
