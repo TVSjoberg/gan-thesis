@@ -24,7 +24,6 @@ def log_normal_df(n_samples, mean, cov, seed=False):
     df, info = multivariate_df(n_samples, mean, cov, seed)
 
     df = df.applymap(lambda x: np.exp(x))
-    print(df)
     info['type'] = 'log-normal'
     return df, info
 
@@ -80,41 +79,46 @@ def mixture_log_normal(n_samples, proportions, means, covs, seed=False):
     info['dim'] = len(means[0])
     return df, info
 
-def cat_mixture_gauss(cond_df, means, covs, seed = False):
+
+def cat_mixture_gauss(cond_df, cond_info, means, covs, seed = False):
     # Note label in feature vectors need have names in the same order 
     # as means/covs
     # 
-    info = {}
+    info = {'Conditional info' : cond_info,
+            'mixture info': {} }
     if seed:
         np.random.seed(seed)
+    dim_count = cond_info['dim']
+    
     
     unique = []
     n_samples = []
-    for i in range(len(cond_df.columns)):
+    for i in range(len(cond_df.columns)): #For each categorical features
         
-        temp_li = cond_df[cond_df.columns[i]].unique()
+        temp_li = cond_df[cond_df.columns[i]].unique() #Find unique labels of features
         temp_li.sort()
         unique.append(temp_li)
         
         temp_li = []
-        for j in range(len(unique[i])):
+        for j in range(len(unique[i])): #Find number of samples with i,j label
             temp_li.append(
                 sum(cond_df[cond_df.columns[i]]==unique[i][j])
                 )
         n_samples.append(temp_li)
-    #return unique, n_samples    
     
     
-    for i in range(len(unique)):
+    for i in range(len(unique)): #For every categorical feature
         df = pd.DataFrame()
-        for j in range(len(unique[i])):
-            print(means[i][j])
-            print(covs[i][j])
+        dim_count += len(means[i][0])
+        
+        for j in range(len(unique[i])): #for each unique label
             temp_df, temp_info = multivariate_df(n_samples[i][j], means[i][j], covs[i][j])
             df = pd.concat((df, temp_df))
-            ## info Handling
+            df = df.reset_index(drop = True)
+            info['mixture info']['Cat_feature_{0} label_{1}'.format(str(i),str(j))] = temp_info
             
-        cond_df = pd.concat((cond_df, df), axis = 1)
+        df = pd.concat((cond_df, df), axis = 1)
+    
     return df, info
     
     
@@ -136,6 +140,7 @@ def multinomial(n_samples, probabilities, seed=False, name='feature_'):
         df[column_names[count]] = temp_data
         info[column_names[count]] = prob
         count += 1
+    info['dim'] = sum(map(lambda prob: len(prob), probabilities))
     return df, info
 
 
@@ -148,20 +153,22 @@ def multinomial_cond(n_samples, ind_probabilities, cond_probabilities, seed=Fals
     # multinomial_cond(20, [[0.5, 0.5],[0.5, 0.5]], [
     #     [
     #         [
-    #             [1, 0],[0, 1]
+    #             [0.8, 0.2],[0, 1]
     #         ], [
     #             [0, 1],[1, 0]
     #         ]
             
     #     ], [
     #         [
-    #             [1, 0],[0, 1]
+    #             [1, 0, 0], [0, 1]
     #         ], [
-    #             [0, 1],[1, 0]
+    #             [0, 0, 1], [1, 0]
+    #         ], [
+    #             [0.1, 0.4, 0.5], [1, 0]
     #         ]
             
     #     ]
-    # ])
+    # ]
     
     
     info = {}
@@ -171,6 +178,9 @@ def multinomial_cond(n_samples, ind_probabilities, cond_probabilities, seed=Fals
     ind_df, ind_info = multinomial(
         n_samples, ind_probabilities, seed, 'ind_feat_')
     cond_df = pd.DataFrame()
+    
+    dim_count = ind_info['dim']
+    info['source distributions'] = ind_info
 
     for i in range(len(ind_probabilities)):
         cond_df = pd.DataFrame()
@@ -182,17 +192,27 @@ def multinomial_cond(n_samples, ind_probabilities, cond_probabilities, seed=Fals
 
         temp_li1 = []
         temp_li2 = []
+        
         for j in range(len(unique_labels)):
+            
             temp_n = len(ind_df[ind_df[ind_df.columns[i]] == unique_labels[j]])
             temp_df, temp_info = multinomial(
                 temp_n, cond_probabilities[i][j], seed, 'cond_feat_'+str(i))
+            
             temp_li1.append(temp_df)
+            temp_info['conditional on'] = unique_labels[j]
             temp_li2.append(temp_info)
-
+        
+        dim_count += temp_info['dim']
+        
         temp = pd.concat(temp_li1)
         cond_df = pd.concat((cond_df, temp), axis=0)
         cond_df = cond_df.reset_index(drop=True)
         ind_df = pd.concat([ind_df, cond_df], axis=1)
+
+        
+        info['conditional on ' +str(i)] = temp_li2
+    info['dim'] = dim_count
 
     return ind_df, info
 
@@ -204,9 +224,12 @@ def multinomial_cond_extension(n_samples, true_ind_prob, ind_prob, cond_prob, se
         np.random.seed()
     
     true_ind_df, true_ind_info = multinomial(n_samples, true_ind_prob, seed, 'true_ind_')    
-    cond_df, cond_info = multinomial(cond, ind_prob, cond_prob, seed)
+    cond_df, cond_info = multinomial_cond(n_samples, ind_prob, cond_prob, seed)
     
-    df = pd.concat((true_ind_df, cond_df))
+    df = pd.concat((true_ind_df, cond_df), axis=1)
+    info['true independent'] = true_ind_info
+    info['conditionals'] = cond_info
+    info['dim'] = cond_info['dim'] + true_ind_info['dim']
     return df, info
   
   
