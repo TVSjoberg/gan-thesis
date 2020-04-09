@@ -1,5 +1,5 @@
 from sklearn.metrics import mutual_info_score
-from scipy.stats import spearmanr
+from scipy.stats import spearmanr, pearsonr
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ def association(dataset, split=False):
     for i in range(len(columns)):
         for j in range(i):
             if (columns[i] in continuous_columns) and (columns[j] in continuous_columns):
-                association_matrix[i, j] = spearmanr(data.iloc[:, i], data.iloc[:, j])[0]
+                association_matrix[i, j] = pearsonr(data.iloc[:, i], data.iloc[:, j])[0]
             if (columns[i] in discrete_columns) and (columns[j] in discrete_columns):
                 association_matrix[i, j] = mutual_info_score(data.iloc[:, i], data.iloc[:, j])
             if (columns[i] in continuous_columns) and (columns[j] in discrete_columns):
