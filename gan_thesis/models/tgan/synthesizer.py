@@ -13,7 +13,6 @@ from hyperopt import hp
 import tensorflow as tf
 
 EPOCHS = 1
-
 # HYPEROPT SPACE
 space = {
     'embedding_dim': hp.quniform('embedding_dim', 16, 512, 2),
@@ -23,6 +22,22 @@ space = {
     'crit_layer_sizes': hp.quniform('crit_layer_sizes', 100, 600, 100),
     'learning_rate': hp.loguniform('l2scale', np.log10(10 ** -6), np.log10(0.2)),
     'batch_size': hp.quniform('batch_size', 50, 500, 50)
+}
+
+# DEFAULT PARAMS
+DEF_PARAMS = {
+    # Regular parameters
+    'eval': 'all',
+    # NN Hyperparameters
+    'embedding_dim': 200,
+    'gen_num_layers': 100,
+    'gen_layer_sizes': 100,
+    'crit_num_layers': 1,
+    'crit_layer_sizes': 100,
+    'l2scale': 10 ** -6,
+    'l2norm': 10 ** -5,
+    'learning_rate': 10 ** -3,
+    'batch_size': 200
 }
 
 
@@ -35,14 +50,16 @@ def build_and_train(params):
     d = params.get('dataset')
     continuous_columns = d.info.get('continuous_columns')
     print('Batch Size:' + str(params.get('batch_size')))
+    savestr = str(np.random.randint(1, 999999))
     my_tgan = TGANModel(continuous_columns=continuous_columns, batch_size=int(params.get('batch_size')),
                         z_dim=int(params.get('embedding_dim')), learning_rate=params.get('learning_rate'),
                         num_gen_rnn=int(params.get('gen_num_layers')), num_gen_feature=int(params.get('gen_layer_sizes')),
                         num_dis_layers=int(params.get('crit_num_layers')), num_dis_hidden=int(params.get('crit_layer_sizes')),
-                        max_epoch=EPOCHS, steps_per_epoch=1, output=str(params.get('training_iter')))
-    params['training_iter'] = params['training_iter'] + 1
+                        max_epoch=EPOCHS, steps_per_epoch=20,
+                        restore_session=False, output=savestr)
     print('Fitting a TGAN model for {0} epochs...'.format(EPOCHS))
-    my_tgan.fit(d.train)
+    train_copy = d.train.copy()
+    my_tgan.fit(train_copy)
     print('Successfully fitted a TGAN model')
 
     return my_tgan
@@ -50,10 +67,12 @@ def build_and_train(params):
 
 def sampler(my_tgan, params):
     d = params.get('dataset')
-    samples = my_tgan.sample(len(d.train))
-    col = d.train.columns
+    train = d.train
+    samples = my_tgan.sample(len(train))
+    col = train.columns.to_list()
     samples.columns = col
-    samples = samples.astype(d.train.dtypes)
+    print(train.head())
+    samples = samples.astype(train.dtypes)
     tgan_dataset = Dataset(d.train, d.test, samples, d.info)
 
     return tgan_dataset
@@ -118,19 +137,19 @@ def main(params=None, optim=True):
             print('Saved the optimized TGAN model at {0}'.format(filename))
     else:
         # Train or load CTGAN model
-        filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model'))
+        filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model') + '_default')
         if os.path.isfile(filename):
-            my_tgan = TGANModel.load(filename)
+            # my_tgan = TGANModel.load(filename)
             print('Successfully loaded old TGAN model from {0}'.format(filename))
         else:
             my_tgan = build_and_train(params=params)
-            my_tgan.save(filename)
+            # my_tgan.save(filename)
             print('Saved the TGAN model at {0}'.format(filename))
 
     # Sample from model
     print('Sampling from the TGAN model...')
     samples = sampler(my_tgan, params)
-    save_samples(samples.data, params['training_set'], model=params.get('model'))
+    save_samples(samples.data, params['training_set'], model=params.get('model'), force=True)
     print('Saved the TGAN samples')
 
     # Evaluate fitted model

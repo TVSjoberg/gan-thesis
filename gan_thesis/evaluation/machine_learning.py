@@ -96,7 +96,8 @@ def abline(slope, intercept):
     plt.plot(x, y, '--')
 
 
-def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, continuous_columns, dataset, model):
+def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, continuous_columns,
+                                  dataset, model, force=True):
     score_y_by_dimension = predictions_by_dimension(samples, data_test, discrete_columns, continuous_columns)
     score_x_by_dimension = predictions_by_dimension(real, data_test, discrete_columns, continuous_columns)
     mean_x_by_dimension = score_x_by_dimension.mean(axis=0)
@@ -114,7 +115,8 @@ def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, co
     filepath = os.path.join(basepath, '{0}_{1}_ml_efficiency.png'.format(dataset, model))
     if not os.path.exists(basepath):
         os.makedirs(basepath)
-
+    if os.path.isfile(filepath) and force:
+        os.remove(filepath)
     plt.savefig(filepath)
 
     score_x_by_dimension.to_csv(os.path.join(basepath, '{0}_{1}_ml_real.csv'.format(dataset, model)), index=True)

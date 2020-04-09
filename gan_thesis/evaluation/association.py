@@ -1,5 +1,5 @@
 from sklearn.metrics import mutual_info_score
-from scipy.stats import spearmanr
+from scipy.stats import spearmanr, pearsonr
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ def association(dataset, split=False):
     for i in range(len(columns)):
         for j in range(i):
             if (columns[i] in continuous_columns) and (columns[j] in continuous_columns):
-                association_matrix[i, j] = spearmanr(data.iloc[:, i], data.iloc[:, j])[0]
+                association_matrix[i, j] = pearsonr(data.iloc[:, i], data.iloc[:, j])[0]
             if (columns[i] in discrete_columns) and (columns[j] in discrete_columns):
                 association_matrix[i, j] = mutual_info_score(data.iloc[:, i], data.iloc[:, j])
             if (columns[i] in continuous_columns) and (columns[j] in discrete_columns):
@@ -48,7 +48,7 @@ def association_difference(real=None, samples=None, association_real=None, assoc
     return np.sum(np.abs((association_real - association_samples).values))
 
 
-def plot_association(real, samples, dataset, model):
+def plot_association(real, samples, dataset, model, force=True):
     association_real = association(real)
     association_samples = association(samples)
 
@@ -77,6 +77,8 @@ def plot_association(real, samples, dataset, model):
     filepath = os.path.join(basepath, '{0}_{1}_association.png'.format(dataset, model))
     if not os.path.exists(basepath):
         os.makedirs(basepath)
+    if os.path.isfile(filepath) and force:
+        os.remove(filepath)
 
     plt.savefig(filepath)
 

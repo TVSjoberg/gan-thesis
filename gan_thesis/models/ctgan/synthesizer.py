@@ -11,7 +11,7 @@ import pandas as pd
 from definitions import RESULT_DIR
 from hyperopt import hp
 
-EPOCHS = 1
+EPOCHS = 300
 
 # HYPEROPT SPACE
 space = {
@@ -113,7 +113,7 @@ def main(params=None, optim=True):
             print('Saved the optimized CTGAN model at {0}'.format(filename))
     else:
         # Train or load CTGAN model
-        filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model'))
+        filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model') + '_default')
         if os.path.isfile(filename):
             my_ctgan = load_model(filename)
             print('Successfully loaded old CTGAN model from {0}'.format(filename))
@@ -144,4 +144,4 @@ def main(params=None, optim=True):
 
 
 if __name__ == "__main__":
-    main(params=None, optim=True)
+    main(params=None, optim=False)
