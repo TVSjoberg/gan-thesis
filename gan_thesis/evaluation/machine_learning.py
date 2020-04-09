@@ -31,11 +31,11 @@ def prediction_score(train_x, train_y, test_x, test_y, metric, model, target):
     m.fit(train_x, train_y)
     test = m.predict(test_x)
     if metric == "f1":
-        return np.max([f1_score(test_y, test, average='micro'), 0])
+        return f1_score(test_y, test, average='micro')
     elif metric == "accuracy":
-        return np.max([accuracy_score(test_y, test), 0])
+        return accuracy_score(test_y, test)
     elif metric == "r2":
-        return np.max([r2_score(test_y, test), 0])
+        return [r2_score(test_y, test)]
     else:
         raise Exception("Metric not recognized.")
 

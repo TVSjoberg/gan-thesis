@@ -24,7 +24,7 @@ class WGAN:
             output_dim:
                 Integer dimension of the output variables including
                 the one-hot encoding of the categorical variables
-            latent_dim(int):
+            embedding_dim:
                 Integer dimension of random noise sampled for the generator
             gen_dim:
                 Tuple with the hidden layer dimension for the generator
@@ -41,7 +41,7 @@ class WGAN:
         """
 
         self.output_dim = params['output_dim']
-        self.latent_dim = params['latent_dim']
+        self.latent_dim = params['embedding_dim']
         self.mode = params['mode']
         self.n_critic = params['n_critic']
         if self.mode == 'wgan-gp':
