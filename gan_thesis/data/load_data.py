@@ -148,7 +148,7 @@ def load_multinomial(pathname, data_params):
     probabilities = data_params.get('probabilities')
     if data_params.get('seed') is None:
         seed = np.random.randint(10000)
-    else 
+    else:
         seed = data_params.get('seed')
     
     df, info = multinomial(n_samples, probabilities, seed=seed)
@@ -162,28 +162,37 @@ def load_cond_multinomial(pathname, data_params):
     cond_probs = data_params.get('cond_probs')
     if data_params.get('seed') is None:
         seed = np.random.randint(10000)
-    else 
+    else:
         seed = data_params.get('seed')
     
     df, info= multinomial_cond(n_samples, ind_probs, cond_probs, seed)
     info['seed'] = seed
     info['continuous_columns'] = df.columns.to_list()
     save_data(df, info, pathname)
-    pass
+    
 
 def load_gauss_cond(pathname, data_params):
     n_samples = data_params.get('n_samples')
+    ind_probs = data_params.get('ind_probs')
+    cond_probs = data_params.get('cond_probs')
+    if cond_probs is None:
+        mode = 'ind_cat'
+    else:
+        mode = 'cond_cat'
     
     
     if data_params.get('seed') is None:
         seed = np.random.randint(10000)
-    else 
+    else:
         seed = data_params.get('seed')
+        
+    
 
     info['seed'] = seed
     info['continuous_columns'] = df.columns.to_list()
     save_data(df, info, pathname)
     pass
+    
 
 def load_ln(pathname, data_params):
     n_samples = data_params['n_samples']

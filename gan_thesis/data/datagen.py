@@ -3,13 +3,17 @@ import numpy as np
 import pandas as pd
 
 
-def multivariate_df(n_samples, mean, cov, seed=False):
+def multivariate_df(n_samples, mean, cov, seed=False, name = 'c'):
     if seed:
         np.random.seed(seed)
+    if (len(mean) == 1):
+        
+        data = np.random.normal(mean, cov[0]**2, n_samples)
+    else: 
+        
+        data = np.random.multivariate_normal(mean, cov, n_samples)
 
-    data = np.random.multivariate_normal(mean, cov, n_samples)
-
-    cols = col_name_gen(len(mean), 'c')
+    cols = col_name_gen(len(mean), name)
     df = pd.DataFrame(data, columns=cols)
     info = {
         'type': 'mvn',
@@ -106,20 +110,21 @@ def cat_mixture_gauss(cond_df, cond_info, means, covs, seed = False):
                 )
         n_samples.append(temp_li)
     
-    
     for i in range(len(unique)): #For every categorical feature
         df = pd.DataFrame()
         dim_count += len(means[i][0])
         
         for j in range(len(unique[i])): #for each unique label
-            temp_df, temp_info = multivariate_df(n_samples[i][j], means[i][j], covs[i][j])
+
+            temp_df, temp_info = multivariate_df(n_samples[i][j], means[i][j],
+                                                  covs[i][j], name = (cond_df.columns[i]+ '_c'))
             df = pd.concat((df, temp_df))
             df = df.reset_index(drop = True)
             info['mixture info']['Cat_feature_{0} label_{1}'.format(str(i),str(j))] = temp_info
             
-        df = pd.concat((cond_df, df), axis = 1)
+        cond_df = pd.concat((cond_df, df), axis = 1)
     
-    return df, info
+    return cond_df, info
     
     
 
