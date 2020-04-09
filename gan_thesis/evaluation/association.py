@@ -40,7 +40,7 @@ def mutual_info_score_binned(x, y, bin_axis=None, bins=10):
     return mutual_info_score(x, y)
 
 
-def association_difference(real=None, samples=None, association_real=None, association_samples=None):
+def association_difference(real=None, samples=None, association_real=None, association_samples=None, force=True):
     if (association_real is None) or (association_samples is None):
         association_real = association(real)
         association_samples = association(samples)
@@ -77,6 +77,8 @@ def plot_association(real, samples, dataset, model):
     filepath = os.path.join(basepath, '{0}_{1}_association.png'.format(dataset, model))
     if not os.path.exists(basepath):
         os.makedirs(basepath)
+    if os.path.isfile(filepath) and force:
+        os.remove(filepath)
 
     plt.savefig(filepath)
 

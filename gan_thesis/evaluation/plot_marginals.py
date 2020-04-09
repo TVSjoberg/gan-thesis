@@ -6,7 +6,7 @@ import os
 from definitions import RESULT_DIR
 
 
-def plot_marginals(real, synthetic, dataset, model):
+def plot_marginals(real, synthetic, dataset, model, force=True):
     cols = synthetic.columns
 
     i_cont = real.columns.get_indexer(real.select_dtypes(np.number).columns)
@@ -27,6 +27,8 @@ def plot_marginals(real, synthetic, dataset, model):
     filepath = os.path.join(basepath, '{0}_{1}_c_marginals.png'.format(dataset, model))
     if not os.path.exists(basepath):
         os.makedirs(basepath)
+    if os.path.isfile(filepath) and force:
+        os.remove(filepath)
     plt.savefig(filepath)
 
     temp = real.copy()
@@ -52,4 +54,6 @@ def plot_marginals(real, synthetic, dataset, model):
     filepath = os.path.join(basepath, '{0}_{1}_d_marginals.png'.format(dataset, model))
     if not os.path.exists(basepath):
         os.makedirs(basepath)
+    if os.path.isfile(filepath) and force:
+        os.remove(filepath)
     plt.savefig(filepath)
