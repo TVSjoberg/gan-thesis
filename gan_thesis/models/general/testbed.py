@@ -7,7 +7,7 @@ import os
 
 def main():
 
-    for data in ['mvn', 'mvn-mixture', 'ln', 'ln-mixture']:
+    for data in ['adult']:
 
         params = gan.DEF_PARAMS
         params['training_set'] = data

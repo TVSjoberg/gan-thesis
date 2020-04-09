@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 from definitions import RESULT_DIR
+from gan_thesis.data.load_data import Dataset
 
 
 def association(dataset, split=False):
@@ -16,7 +17,9 @@ def association(dataset, split=False):
     association_matrix = np.ones(shape=(len(columns), len(columns)))
 
     for i in range(len(columns)):
+        print(columns[i])
         for j in range(i):
+            print(columns[j])
             if (columns[i] in continuous_columns) and (columns[j] in continuous_columns):
                 association_matrix[i, j] = pearsonr(data.iloc[:, i], data.iloc[:, j])[0]
             if (columns[i] in discrete_columns) and (columns[j] in discrete_columns):
@@ -48,29 +51,30 @@ def association_difference(real=None, samples=None, association_real=None, assoc
     return np.sum(np.abs((association_real - association_samples).values))
 
 
-def plot_association(real, samples, dataset, model, force=True):
-    association_real = association(real)
-    association_samples = association(samples)
+def plot_association(real_dataset, samples, dataset, model, force=True):
+    association_real = association(real_dataset)
+    samples_dataset = Dataset(None, None, samples, real_dataset.info, None)
+    association_samples = association(samples_dataset)
 
-    mask = np.triu(np.ones_like(association_real, dtype=np.bool))
+    mask = np.triu(np.ones_like(association_real, dtype=np.bool), 1)
 
     plt.figure(figsize=(12, 5))
     plt.suptitle(model.upper() + ' Association')
     plt.subplot(1, 2, 1)
     plt.title('Real')
     sns.heatmap(association_real,
-                vmin=0,
-                vmax=1,
+                vmin=-1,
+                vmax=None,
                 mask=mask,
-                annot=True,
+                annot=False,
                 cmap='coolwarm')
     plt.subplot(1, 2, 2)
     plt.title('Samples')
     sns.heatmap(association_samples,
-                vmin=0,
-                vmax=1,
+                vmin=-1,
+                vmax=None,
                 mask=mask,
-                annot=True,
+                annot=False,
                 cmap='coolwarm')
 
     basepath = os.path.join(RESULT_DIR, dataset, model)

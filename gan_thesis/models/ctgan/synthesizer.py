@@ -50,7 +50,7 @@ def sampler(my_ctgan, params):
     col = d.train.columns
     samples.columns = col
     samples = samples.astype(d.train.dtypes)
-    ctgan_dataset = Dataset(d.train, d.test, samples, d.info)
+    ctgan_dataset = Dataset(d.train, d.test, samples, d.info, None)
 
     return ctgan_dataset
 

@@ -4,15 +4,16 @@ import json
 import shutil
 import numpy as np
 from gan_thesis.data.datagen import *
-from definitions import DATA_DIR
+from definitions import DATA_DIR, ROOT_DIR
 
 
 class Dataset:
-    def __init__(self, train, test, data, info):
+    def __init__(self, train, test, data, info, samples):
         self.train = train
         self.test = test
         self.data = data
         self.info = info
+        self.samples = samples
 
     def get_columns(self):
         d_col = self.info.get('discrete_columns')
@@ -27,16 +28,23 @@ def load_data(dataset, data_params=None):
     if not all([os.path.isfile(f) for f in filelist]):
         if os.path.exists(pathname):
             shutil.rmtree(pathname)
-        os.mkdir(pathname)
+        os.makedirs(pathname)
         load_wrapper[dataset](pathname, data_params)
 
     train = pd.read_csv(os.path.join(pathname, 'train.csv'))
     test = pd.read_csv(os.path.join(pathname, 'test.csv'))
     df = pd.read_csv(os.path.join(pathname, 'data.csv'))
+    samples_dir = {}
+    for model in ['ctgan', 'tgan', 'wgan']:
+        fname = os.path.join(pathname, model, '{0}_{1}_samples.csv'.format(dataset, model))
+        if os.path.isfile(fname):
+            samples = pd.read_csv(fname)
+            samples_dir[model] = samples
+
     with open(os.path.join(pathname, 'info.json'), "r") as read_file:
         info = json.load(read_file)
 
-    return Dataset(train, test, df, info)
+    return Dataset(train, test, df, info, samples_dir)
 
 
 def load_adult(dirname, *args):
@@ -70,7 +78,7 @@ def load_adult(dirname, *args):
 
         "continuous_columns": ['age',
                                'fnlwgt',
-                               'education.num',
+                               'education-num',
                                'capital-gain',
                                'capital-loss',
                                'hours-per-week'],
@@ -79,9 +87,10 @@ def load_adult(dirname, *args):
     }
 
     cc = info.get('columns')
-    df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',
-                     names=cc, header=0)
-
+    df = pd.read_csv(os.path.join(ROOT_DIR, 'adult.csv'), names=cc, header=0)
+    # df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',
+    #                 names=cc, header=0)
+    df = df.sample(frac=1).reset_index(drop=True)
     train, test = train_test_split(df=df, n_test=n_test)
     df.to_csv(os.path.join(dirname, 'data.csv'), index=False)
     train.to_csv(os.path.join(dirname, 'train.csv'), index=False)
@@ -148,7 +157,7 @@ def load_multinomial(pathname, data_params):
     probabilities = data_params.get('probabilities')
     if data_params.get('seed') is None:
         seed = np.random.randint(10000)
-    else 
+    else:
         seed = data_params.get('seed')
     
     df, info = multinomial(n_samples, probabilities, seed=seed)
@@ -162,7 +171,7 @@ def load_cond_multinomial(pathname, data_params):
     cond_probs = data_params.get('cond_probs')
     if data_params.get('seed') is None:
         seed = np.random.randint(10000)
-    else 
+    else:
         seed = data_params.get('seed')
     
     df, info= multinomial_cond(n_samples, ind_probs, cond_probs, seed)
@@ -177,12 +186,12 @@ def load_gauss_cond(pathname, data_params):
     
     if data_params.get('seed') is None:
         seed = np.random.randint(10000)
-    else 
+    else:
         seed = data_params.get('seed')
 
-    info['seed'] = seed
-    info['continuous_columns'] = df.columns.to_list()
-    save_data(df, info, pathname)
+    # info['seed'] = seed
+    # info['continuous_columns'] = df.columns.to_list()
+    # save_data(df, info, pathname)
     pass
 
 def load_ln(pathname, data_params):
@@ -220,7 +229,7 @@ def train_test_split(df, n_test):
     return train, test
 
 
-def save_samples(df, dataset, model, force=False):
+def save_samples(df, dataset, model, force=True):
     fname = os.path.join(DATA_DIR, dataset, model, '{0}_{1}_samples.csv'.format(dataset, model))
     if os.path.isfile(fname) and not force:
         return
@@ -245,21 +254,8 @@ load_wrapper = {
 
 
 def main():
-    mvn_params = {
-        'n_samples': 10000,
-        'mean': [0, 0.5, 1],
-        #'cov': ((np.random.uniform(size = (3,3)*1.5) + np.eye(3,3))*3).tolist()
-        'cov' : np.eye(3).tolist()
-    }
-    
-    mvn_mix_params = {
-        'n_samples': 10000,
-        'proportions': [0.5, 0.5],
-       'means': [[0, 0.5, 1], [2, 3, 5]],
-        'covs': [(np.eye(3) + 0.2).tolist(), (np.eye(3) * 3 + 1).tolist()]
-    }
-    load_data('mvn', mvn_params)
-    load_data('mvn-mixture', mvn_mix_params)
+
+    load_data('adult')
 
 
 if __name__ == '__main__':

@@ -12,7 +12,7 @@ from definitions import RESULT_DIR
 from hyperopt import hp
 import tensorflow as tf
 
-EPOCHS = 1
+EPOCHS = 100
 # HYPEROPT SPACE
 space = {
     'embedding_dim': hp.quniform('embedding_dim', 16, 512, 2),
@@ -55,7 +55,7 @@ def build_and_train(params):
                         z_dim=int(params.get('embedding_dim')), learning_rate=params.get('learning_rate'),
                         num_gen_rnn=int(params.get('gen_num_layers')), num_gen_feature=int(params.get('gen_layer_sizes')),
                         num_dis_layers=int(params.get('crit_num_layers')), num_dis_hidden=int(params.get('crit_layer_sizes')),
-                        max_epoch=EPOCHS, steps_per_epoch=20,
+                        max_epoch=EPOCHS, steps_per_epoch=115,
                         restore_session=False, output=savestr)
     print('Fitting a TGAN model for {0} epochs...'.format(EPOCHS))
     train_copy = d.train.copy()
@@ -73,9 +73,8 @@ def sampler(my_tgan, params):
     samples.columns = col
     print(train.head())
     samples = samples.astype(train.dtypes)
-    tgan_dataset = Dataset(d.train, d.test, samples, d.info)
 
-    return tgan_dataset
+    return samples
 
 
 def optim_loss(samples, params):
@@ -123,44 +122,51 @@ def main(params=None, optim=True):
     params['dataset'] = dataset
     print('Successfully loaded dataset {0}'.format(params.get('training_set')))
 
-    if optim:
-        # Optimize or load TGAN model
-        filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model') + '_optimized')
-        if os.path.isfile(filename):
-            my_tgan = TGANModel.load(filename)
-            print('Successfully loaded old optimized TGAN model from {0}'.format(filename))
-        else:
-            best, trials = optimize(params, filename+'.json')
-            best['dataset'] = dataset
-            my_tgan = build_and_train(best)
-            my_tgan.save(filename)
-            print('Saved the optimized TGAN model at {0}'.format(filename))
+    if params['model'] in dataset.samples:
+        #  If we are here, we have already generated samples for this test setup (identifier/dataset/model)
+        samples = dataset.samples.get(params['model'])
     else:
-        # Train or load CTGAN model
-        filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model') + '_default')
-        if os.path.isfile(filename):
-            # my_tgan = TGANModel.load(filename)
-            print('Successfully loaded old TGAN model from {0}'.format(filename))
+        # Train model and Generate samples
+        if optim:
+            # Optimize or load TGAN model
+            filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model') + '_optimized')
+            if os.path.isfile(filename):
+                my_tgan = TGANModel.load(filename)
+                print('Successfully loaded old optimized TGAN model from {0}'.format(filename))
+            else:
+                best, trials = optimize(params, filename+'.json')
+                best['dataset'] = dataset
+                my_tgan = build_and_train(best)
+                my_tgan.save(filename)
+                print('Saved the optimized TGAN model at {0}'.format(filename))
         else:
-            my_tgan = build_and_train(params=params)
-            # my_tgan.save(filename)
-            print('Saved the TGAN model at {0}'.format(filename))
+            # Train or load CTGAN model
+            filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model') + '_default')
+            filename2 = os.path.join(DATA_DIR, params.get('training_set'), params.get('model'))
+            if os.path.isfile(filename):
+                # my_tgan = TGANModel.load(filename)
+                print('Successfully loaded old TGAN model from {0}'.format(filename))
+            else:
+                my_tgan = build_and_train(params=params)
+                # my_tgan.save(filename)
+                print('Saved the TGAN model at {0}'.format(filename))
 
-    # Sample from model
-    print('Sampling from the TGAN model...')
-    samples = sampler(my_tgan, params)
-    save_samples(samples.data, params['training_set'], model=params.get('model'), force=True)
-    print('Saved the TGAN samples')
+        # Sample from model
+        print('Sampling from the TGAN model...')
+        samples = sampler(my_tgan, params)
+        save_samples(samples, params['training_set'], model=params.get('model'), force=True)
+        print('Saved the TGAN samples')
 
     # Evaluate fitted model
     if params['eval'] == 'all':
+        print(dataset.train.dtypes)
         print('Starting MLE evaluation on samples...')
         discrete_columns, continuous_columns = dataset.get_columns()
-        plot_predictions_by_dimension(real=dataset.train, samples=samples.data, data_test=dataset.test,
+        plot_predictions_by_dimension(real=dataset.train, samples=samples, data_test=dataset.test,
                                       discrete_columns=discrete_columns, continuous_columns=continuous_columns,
                                       dataset=params.get('training_set'), model=params.get('model'))
         print('Plotting marginals of real and sample data...')
-        plot_marginals(dataset.train, samples.data, params.get('training_set'), params.get('model'))
+        plot_marginals(dataset.train, samples, params.get('training_set'), params.get('model'))
         print('Plotting association matrices...')
         diff = plot_association(dataset, samples, params.get('training_set'), params.get('model'))
         print(diff)
