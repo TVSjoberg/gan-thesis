@@ -40,7 +40,7 @@ def mutual_info_score_binned(x, y, bin_axis=None, bins=10):
     return mutual_info_score(x, y)
 
 
-def association_difference(real=None, samples=None, association_real=None, association_samples=None, force=True):
+def association_difference(real=None, samples=None, association_real=None, association_samples=None):
     if (association_real is None) or (association_samples is None):
         association_real = association(real)
         association_samples = association(samples)
@@ -48,7 +48,7 @@ def association_difference(real=None, samples=None, association_real=None, assoc
     return np.sum(np.abs((association_real - association_samples).values))
 
 
-def plot_association(real, samples, dataset, model):
+def plot_association(real, samples, dataset, model, force=True):
     association_real = association(real)
     association_samples = association(samples)
 
