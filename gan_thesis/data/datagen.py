@@ -3,11 +3,12 @@ import numpy as np
 import pandas as pd
 
 
-def multivariate_df(n_samples, mean, cov, seed=False, name = 'c'):
+def multivariate_df(n_samples, mean, var, corr, seed=False, name = 'c'):
     if seed:
         np.random.seed(seed)
-    if (len(mean) == 1):
-        
+    
+    cov = corr_var_to_cov(corr, var)
+    if (len(mean) == 1):    
         data = np.random.normal(mean, cov[0]**2, n_samples)
     else: 
         
@@ -18,22 +19,24 @@ def multivariate_df(n_samples, mean, cov, seed=False, name = 'c'):
     info = {
         'type': 'mvn',
         'mean': mean,
-        'covariance': cov,
+        'correlation' : corr,
+        'variance': var,
         'dim' : len(mean)
     }
     return df, info
 
 
-def log_normal_df(n_samples, mean, cov, seed=False):
-    df, info = multivariate_df(n_samples, mean, cov, seed)
+def log_normal_df(n_samples, mean, var, corr, seed=False):
+    df, info = multivariate_df(n_samples, mean, var, corr, seed)
 
     df = df.applymap(lambda x: np.exp(x))
     info['type'] = 'log-normal'
     return df, info
 
 
-def mixture_gauss(n_samples, proportions, means, covs, seed=False):
-    # Note that means and covs are lists of means and Covariance matrices
+def mixture_gauss(n_samples, proportions, means, varis, corrs, seed=False):
+    # Note that means and var, corr are lists of means, variances and Correlation matrices
+    
     info = {}
     if seed:
         np.random.seed(seed)
@@ -41,24 +44,21 @@ def mixture_gauss(n_samples, proportions, means, covs, seed=False):
     k = len(means)
     cols = col_name_gen(len(means[0]), 'c')
     df = pd.DataFrame(columns=cols)
+    n_samples_li = np.random.multinomial(n_samples, proportions)
 
-    for i in range(k-1):
-        temp_df, temp_info = multivariate_df(
-            int(np.floor(n_samples*proportions[i])), means[i], covs[i], seed)
+    for i in range(k):
+        temp_df, temp_info = multivariate_df(n_samples_li[i],
+                                              means[i], varis[i], corrs[i], seed)
         df = pd.concat((df, temp_df))
         temp_info['Proportion of total'] = proportions[i]
         info['dist ' + str(i)] = temp_info
     
-    temp_df, temp_info = multivariate_df((n_samples-len(df)), means[k-1], covs[k-1], seed)
-    df = pd.concat((df, temp_df))
-    temp_info['Proportion of total'] = proportions[k-1]
-    info['dist ' + str(k-1)] = temp_info
     
     info['dim'] = len(means[0])
     return df, info
 
 
-def mixture_log_normal(n_samples, proportions, means, covs, seed=False):
+def mixture_log_normal(n_samples, proportions, means, varis, corrs, seed=False):
     # Note that means and covs are lists of means and Covariance matrices
     info = {}
     if seed:
@@ -67,24 +67,20 @@ def mixture_log_normal(n_samples, proportions, means, covs, seed=False):
     k = len(means)
     cols = col_name_gen(len(means[0]), 'c')
     df = pd.DataFrame(columns=cols)
+    n_samples_li = np.random.multinomial(n_samples, proportions)
 
-    for i in range(k-1):
-        temp_df, temp_info = log_normal_df(
-            int(np.floor(n_samples*proportions[i])), means[i], covs[i], seed)
+    for i in range(k):
+        temp_df, temp_info = log_normal_df(n_samples_li[i],
+                                            means[i], varis[i], corrs[i], seed)
         df = pd.concat((df, temp_df))
         temp_info['Proportion of total'] = proportions[i]
         info['dist ' + str(i)] = temp_info
-    
-    temp_df, temp_info = log_normal_df((n_samples-len(df), means[k-1], covs[k-1], seed))
-    df = pd.concat((df, temp_df))
-    temp_info['Proportion of total'] = proportions[k-1]
-    info['dist ' + str(i)] = temp_info
         
     info['dim'] = len(means[0])
     return df, info
 
 
-def cat_mixture_gauss(cond_df, cond_info, means, covs, seed = False):
+def cat_mixture_gauss(cond_df, cond_info, means, varis, corrs, seed = False):
     # Note label in feature vectors need have names in the same order 
     # as means/covs
     # 
@@ -117,12 +113,14 @@ def cat_mixture_gauss(cond_df, cond_info, means, covs, seed = False):
         for j in range(len(unique[i])): #for each unique label
 
             temp_df, temp_info = multivariate_df(n_samples[i][j], means[i][j],
-                                                  covs[i][j], name = (cond_df.columns[i]+ '_c'))
+                                                  varis[i][j], corrs[i][j], name = (cond_df.columns[i]+ '_c'))
             df = pd.concat((df, temp_df))
             df = df.reset_index(drop = True)
             info['mixture info']['Cat_feature_{0} label_{1}'.format(str(i),str(j))] = temp_info
             
         cond_df = pd.concat((cond_df, df), axis = 1)
+        
+    info['dim'] = dim_count
     
     return cond_df, info
     
@@ -238,6 +236,22 @@ def multinomial_cond_extension(n_samples, true_ind_prob, ind_prob, cond_prob, se
     return df, info
   
   
+  
+  ### Helper functions
+  
+def corr_var_to_cov(corr, var):
+    corr = np.array(corr)
+    var = np.array(np.sqrt(var))
+    
+    res = corr*var
+    var = var.reshape(len(var),1)
+    
+    res = corr*var
+    return res
+     
+    
+    
+    
     
 
 def col_name_gen(num_cols, common_name):

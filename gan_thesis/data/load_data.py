@@ -95,13 +95,14 @@ def load_mvn_mixture(pathname, data_params):
     n_samples = data_params['n_samples']
     proportions = data_params['proportions']
     means = data_params['means']
-    covs = data_params['covs']
+    corrs = data_params['corrs']
+    var = data_params['vars']
     if data_params.get('seed') is None:
         seed = np.random.randint(10000)
     else:
         seed = data_params.get('seed')
 
-    df, info = mixture_gauss(n_samples, proportions, means, covs, seed)
+    df, info = mixture_gauss(n_samples, proportions, means, var, corrs, seed)
     info['seed'] = seed
     info['continuous_columns'] = df.columns.to_list()
     info['discrete_columns'] = []
@@ -112,13 +113,14 @@ def load_mvn_mixture(pathname, data_params):
 def load_mvn(pathname, data_params):
     n_samples = data_params['n_samples']
     mean = data_params['mean']
-    cov = data_params['cov']
+    corr = data_params['corr']
+    var = data_params['var']
     if data_params.get('seed') is None:
         seed = np.random.randint(10000)
     else:
         seed = data_params.get('seed')
 
-    df, info = multivariate_df(n_samples, mean, cov, seed)
+    df, info = multivariate_df(n_samples, mean, var, corr seed)
     info['seed'] = seed
     info['continuous_columns'] = df.columns.to_list()
     info['discrete_columns'] = []
@@ -130,13 +132,14 @@ def load_ln_mixture(pathname, data_params):
     n_samples = data_params['n_samples']
     proportions = data_params['proportions']
     means = data_params['means']
-    covs = data_params['covs']
+    corrs = data_params['corrs']
+    var = data_params['vars']
     if data_params.get('seed') is None:
         seed = np.random.randint(10000)
     else:
         seed = data_params.get('seed')
 
-    df, info = mixture_log_normal(n_samples, proportions, means, covs, seed)
+    df, info = mixture_log_normal(n_samples, proportions, means, var, corrs, seed)
     info['seed'] = seed
     info['continuous_columns'] = df.columns.to_list()
     info['discrete_columns'] = []
@@ -183,7 +186,8 @@ def load_gauss_cond(pathname, data_params):
     else:
         mode = 'cond_cat'
     means = data_params.get('means')
-    covs = data_params.get('covs')
+    corrs = data_params.get('corrs')
+    var = data_params.get('vars')
     
     if data_params.get('seed') is None:
         seed = np.random.randint(10000)
@@ -195,7 +199,7 @@ def load_gauss_cond(pathname, data_params):
     else:
         cond_df, cond_info = multinomial_cond(n_samples, ind_probs, cond_probs, seed)
     
-    df, info = cat_mixture_gauss(cond_df, cond_info, means, covs, seed)
+    df, info = cat_mixture_gauss(cond_df, cond_info, means, var, corrs, seed)
 
     info['seed'] = seed
     info['continuous_columns'] = [f for f in  df.columns.to_list() if f not in cond_df.columns.to_list()]
@@ -222,6 +226,8 @@ def load_ln(pathname, data_params):
 
 
 def save_data(df, info, dirname):
+
+    df = df.sample(frac=1).reset_index(drop=True)
     train, test = train_test_split(df=df, n_test=int(np.floor(0.1 * len(df))))
     df.to_csv(os.path.join(dirname, 'data.csv'), index=False)
     train.to_csv(os.path.join(dirname, 'train.csv'), index=False)
