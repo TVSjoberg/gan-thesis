@@ -1,0 +1,1 @@
+{"type": "mvn", "mean": [0, 3, 0], "correlation": [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], "variance": [1, 1, 5], "dim": 3, "seed": 5248, "continuous_columns": ["c0", "c1", "c2"], "discrete_columns": []}
