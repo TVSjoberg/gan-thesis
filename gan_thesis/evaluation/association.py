@@ -77,7 +77,9 @@ def plot_association(real_dataset, samples, dataset, model, force=True):
                 annot=False,
                 cmap='coolwarm')
 
-    basepath = os.path.join(RESULT_DIR, dataset, model)
+    alist = dataset.split(sep='-', maxsplit=1)
+    dataset = alist[0]
+    basepath = os.path.join(RESULT_DIR, *alist, model)
     filepath = os.path.join(basepath, '{0}_{1}_association.png'.format(dataset, model))
     if not os.path.exists(basepath):
         os.makedirs(basepath)

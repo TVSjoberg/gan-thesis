@@ -111,7 +111,9 @@ def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, co
     ax.set_xlabel("Real features")
     abline(1, 0)
 
-    basepath = os.path.join(RESULT_DIR, dataset, model)
+    alist = dataset.split(sep='-', maxsplit=1)
+    dataset = alist[0]
+    basepath = os.path.join(RESULT_DIR, *alist, model)
     filepath = os.path.join(basepath, '{0}_{1}_ml_efficiency.png'.format(dataset, model))
     if not os.path.exists(basepath):
         os.makedirs(basepath)

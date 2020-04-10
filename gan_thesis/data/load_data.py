@@ -4,7 +4,7 @@ import json
 import shutil
 import numpy as np
 from gan_thesis.data.datagen import *
-from definitions import DATA_DIR, ROOT_DIR
+from definitions import DATA_DIR, ROOT_DIR, mvn_test1, mvn_test2, mvn_mix_test1
 
 
 class Dataset:
@@ -22,13 +22,21 @@ class Dataset:
 
 
 def load_data(dataset, data_params=None):
-    pathname = os.path.join(DATA_DIR, dataset)
+    '''
+    :param dataset: A string with the following structure: 'dataset-identifier'. Dataset tells us which dataset to load,
+                    identifier allows us to specify different tests. Example: mvn-test1
+    :param data_params: Required for synthetic datasets
+    :return: A Dataset variable
+    '''
+    alist = dataset.split(sep='-', maxsplit=1)
+    dataset = alist[0]
+    pathname = os.path.join(DATA_DIR, *alist)
     filelist = ['train.csv', 'test.csv', 'data.csv', 'info.json']
     filelist = map(lambda x: os.path.join(pathname, x), filelist)
     if not all([os.path.isfile(f) for f in filelist]):
         if os.path.exists(pathname):
             shutil.rmtree(pathname)
-        os.mkdir(pathname)
+        os.makedirs(pathname)
         load_wrapper[dataset](pathname, data_params)
 
     train = pd.read_csv(os.path.join(pathname, 'train.csv'))
@@ -129,7 +137,7 @@ def load_mvn(pathname, data_params):
     else:
         seed = data_params.get('seed')
 
-    df, info = multivariate_df(n_samples, mean, var, corr seed)
+    df, info = multivariate_df(n_samples, mean, var, corr, seed)
     info['seed'] = seed
     info['continuous_columns'] = df.columns.to_list()
     info['discrete_columns'] = []
@@ -255,7 +263,9 @@ def train_test_split(df, n_test):
 
 
 def save_samples(df, dataset, model, force=True):
-    fname = os.path.join(DATA_DIR, dataset, model, '{0}_{1}_samples.csv'.format(dataset, model))
+    alist = dataset.split(sep='-', maxsplit=1)
+    dataset = alist[0]
+    fname = os.path.join(DATA_DIR, *alist, model, '{0}_{1}_samples.csv'.format(dataset, model))
     if os.path.isfile(fname) and not force:
         return
     base_path = os.path.dirname(fname)
@@ -279,67 +289,9 @@ load_wrapper = {
 
 
 def main():
-    mvn_params = {
-        'n_samples': 10000,
-        'mean': [0, 0.5, 1],
-        #'cov': ((np.random.uniform(size = (3,3)*1.5) + np.eye(3,3))*3).tolist()
-        'cov' : np.eye(3).tolist()
-    }
-    
-    mvn_mix_params = {
-        'n_samples': 10000,
-        'proportions': [0.5, 0.5],
-       'means': [[0, 0.5, 1], [2, 3, 5]],
-        'covs': [(np.eye(3) + 0.2).tolist(), (np.eye(3) * 3 + 1).tolist()]
-    }
 
-    ln_params = mvn_params.copy()
-    ln_mix_params = mvn_mix_params.copy()
-
-    multinomial_params = {
-        'n_samples' : 10000,
-        'probabilities' : [
-            [0.1,0.3,0.6],
-            [0.5,0.5]
-        ]
-    }
-
-    multinomial_cond_params = {
-        'n_samples' : 10000,
-        'ind_probs' : [
-            [0.5, 0.5],
-            [0.1, 0.3, 0.6]
-        ],
-        'cond_probs' : [
-            [
-            [0.3, 0 , 0.7],
-            [0.1, 0.9, 0]
-            ], [
-                [0.5, 0.5],
-                [1, 0]
-            ]
-        ]
-    }
-
-    gauss_cat_mix_params1 = {
-        'n_samples' : 10000,
-        'ind_probs' : [],
-        'means' : [],
-        'covs' : []
-    }
-
-    gauss_cat_mix_params2 = {
-        'n_samples' : 10000,
-        'ind_params' : [],
-        'cond_params' : [],
-        'means' : [],
-        'covs' : []
-
-    }
-
-
-    load_data('mvn', mvn_params)
-    load_data('mvn-mixture', mvn_mix_params)
+    load_data('mvn-test1', data_params=mvn_test1)
+    load_data('mvn-test2', data_params=mvn_test2)
 
 
 if __name__ == '__main__':
