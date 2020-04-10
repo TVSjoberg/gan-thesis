@@ -24,6 +24,19 @@ space = {
     'batch_size': hp.quniform('batch_size', 50, 500, 50)
 }
 
+DEF_PARAMS = {
+    # Regular parameters
+    'eval': 'all',
+    # NN Hyperparameters
+    'embedding_dim': 128,
+    'gen_num_layers': 2,
+    'gen_layer_sizes': 256,
+    'crit_num_layers': 2,
+    'crit_layer_sizes': 256,
+    'l2scale': 10 ** -6,
+    'batch_size': 500
+}
+
 
 def build_and_train(params):
 
@@ -50,9 +63,8 @@ def sampler(my_ctgan, params):
     col = d.train.columns
     samples.columns = col
     samples = samples.astype(d.train.dtypes)
-    ctgan_dataset = Dataset(d.train, d.test, samples, d.info, None)
 
-    return ctgan_dataset
+    return samples
 
 
 def optim_loss(samples, params):
@@ -99,48 +111,52 @@ def main(params=None, optim=True):
     params['dataset'] = dataset
     print('Successfully loaded dataset {0}'.format(params.get('training_set')))
 
-    if optim:
-        # Optimize or load CTGAN model
-        filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model') + '_optimized')
-        if os.path.isfile(filename):
-            my_ctgan = load_model(filename)
-            print('Successfully loaded old optimized CTGAN model from {0}'.format(filename))
-        else:
-            best, trials = optimize(params, filename+'.json')
-            best['dataset'] = dataset
-            my_ctgan = build_and_train(best)
-            save_model(my_ctgan, filename, force=True)
-            print('Saved the optimized CTGAN model at {0}'.format(filename))
+    if params['model'] in dataset.samples:
+        #  If we are here, we have already generated samples for this test setup (identifier/dataset/model)
+        samples = dataset.samples.get(params['model'])
     else:
-        # Train or load CTGAN model
-        filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model') + '_default')
-        if os.path.isfile(filename):
-            my_ctgan = load_model(filename)
-            print('Successfully loaded old CTGAN model from {0}'.format(filename))
+        if optim:
+            # Optimize or load CTGAN model
+            filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model') + '_optimized')
+            if os.path.isfile(filename):
+                my_ctgan = load_model(filename)
+                print('Successfully loaded old optimized CTGAN model from {0}'.format(filename))
+            else:
+                best, trials = optimize(params, filename+'.json')
+                best['dataset'] = dataset
+                my_ctgan = build_and_train(best)
+                save_model(my_ctgan, filename, force=True)
+                print('Saved the optimized CTGAN model at {0}'.format(filename))
         else:
-            my_ctgan = build_and_train(params=params)
-            save_model(my_ctgan, filename, force=True)
-            print('Saved the CTGAN model at {0}'.format(filename))
+            # Train or load CTGAN model
+            filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model') + '_default')
+            if os.path.isfile(filename):
+                # my_ctgan = load_model(filename)
+                print('Successfully loaded old CTGAN model from {0}'.format(filename))
+            else:
+                my_ctgan = build_and_train(params=params)
+                # save_model(my_ctgan, filename, force=True)
+                print('Saved the CTGAN model at {0}'.format(filename))
 
-    # Sample from model
-    print('Sampling from the CTGAN model...')
-    samples = sampler(my_ctgan, params)
-    save_samples(samples.data, params['training_set'], model='ctgan')
-    print('Saved the CTGAN samples')
+        # Sample from model
+        print('Sampling from the CTGAN model...')
+        samples = sampler(my_ctgan, params)
+        save_samples(samples, params['training_set'], model=params.get('model'), force=True)
+        print('Saved the CTGAN samples')
 
     # Evaluate fitted model
     if params['eval'] == 'all':
         print('Starting MLE evaluation on samples...')
         discrete_columns, continuous_columns = dataset.get_columns()
-        plot_predictions_by_dimension(real=dataset.train, samples=samples.data, data_test=dataset.test,
+        plot_predictions_by_dimension(real=dataset.train, samples=samples, data_test=dataset.test,
                                       discrete_columns=discrete_columns, continuous_columns=continuous_columns,
-                                      dataset=params.get('training_set'), model='ctgan')
+                                      dataset=params.get('training_set'), model=params.get('model'))
         print('Plotting marginals of real and sample data...')
-        plot_marginals(dataset.train, samples.data, params.get('training_set'), 'ctgan')
+        plot_marginals(dataset.train, samples, params.get('training_set'), params.get('model'))
         print('Plotting association matrices...')
-        diff = plot_association(dataset, samples, params.get('training_set'), 'ctgan')
+        diff = plot_association(dataset, samples, params.get('training_set'), params.get('model'))
         print(diff)
-        save_json(diff, os.path.join(RESULT_DIR, params.get('training_set'), 'ctgan', 'association_difference'))
+        save_json(diff, os.path.join(RESULT_DIR, params.get('training_set'), params.get('model'), 'association_difference'))
 
 
 if __name__ == "__main__":
