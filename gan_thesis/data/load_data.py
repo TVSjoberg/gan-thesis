@@ -4,7 +4,7 @@ import json
 import shutil
 import numpy as np
 from gan_thesis.data.datagen import *
-from definitions import DATA_DIR, ROOT_DIR, mvn_test1, mvn_test2, mvn_mix_test1
+from definitions import DATA_DIR, ROOT_DIR, mvn_test1, mvn_test2, mvn_mix_test1, ln_test1, ln_test2
 
 
 class Dataset:
@@ -228,13 +228,14 @@ def load_gauss_cond(pathname, data_params):
 def load_ln(pathname, data_params):
     n_samples = data_params['n_samples']
     mean = data_params['mean']
-    cov = data_params['cov']
+    var = data_params['var']
+    corr = data_params['corr']
     if data_params.get('seed') is None:
         seed = np.random.randint(10000)
     else:
         seed = data_params.get('seed')
 
-    df, info = log_normal_df(n_samples, mean, cov, seed)
+    df, info = log_normal_df(n_samples, mean, var, corr, seed)
     info['seed'] = seed
     info['continuous_columns'] = df.columns.to_list()
     info['discrete_columns'] = []
@@ -290,9 +291,86 @@ load_wrapper = {
 
 def main():
 
-    load_data('mvn-test1', data_params=mvn_test1)
-    load_data('mvn-test2', data_params=mvn_test2)
-
+    #load_data('mvn-test1', data_params=mvn_test1)
+    #load_data('mvn-test2', data_params=mvn_test2)
+    load_data('ln-test1', data_params=ln_test1)
+    load_data('ln-test2', data_params=ln_test2)
 
 if __name__ == '__main__':
     main()
+
+
+
+
+#     mvn_test_1 = {
+#     # 3 INDEPENDENT features
+#     # 1 standard normal, 1 high mean, 1 high var
+#     #
+#     'n_samples' : 10000,
+#     'mean' : [0 ,3, 0],
+#     'var' : [1, 1, 5],
+#     'corr' : np.eye(3).tolist()
+#     }
+
+#     mvn_test2 = {
+#     #medium positive
+#     #medium negative
+#     #correlations
+#     'n_samples' : 10000,
+#     'mean' : [0, 0, 0],
+#     'var' : [1, 1, 1],
+#     'corr' : [[1, 0.3, -0.3],
+#               [0.3, 1, 0.8],
+#               [-0.3, 0.8, 1]]
+# }
+    
+#     mvn_mix_params = {
+#         'n_samples': 10000,
+#         'proportions': [0.5, 0.5],
+#        'means': [[0, 0.5, 1], [2, 3, 5]],
+#         'covs': [(np.eye(3) + 0.2).tolist(), (np.eye(3) * 3 + 1).tolist()]
+#     }
+
+#     #ln_params = mvn_params.copy()
+#     #ln_mix_params = mvn_mix_params.copy()
+
+#     multinomial_params = {
+#         'n_samples' : 10000,
+#         'probabilities' : [
+#             [0.1,0.3,0.6],
+#             [0.5,0.5]
+#         ]
+#     }
+
+#     multinomial_cond_params = {
+#         'n_samples' : 10000,
+#         'ind_probs' : [
+#             [0.5, 0.5],
+#             [0.1, 0.3, 0.6]
+#         ],
+#         'cond_probs' : [
+#             [
+#             [0.3, 0 , 0.7],
+#             [0.1, 0.9, 0]
+#             ], [
+#                 [0.5, 0.5],
+#                 [1, 0]
+#             ]
+#         ]
+#     }
+
+#     gauss_cat_mix_params1 = {
+#         'n_samples' : 10000,
+#         'ind_probs' : [],
+#         'means' : [],
+#         'covs' : []
+#     }
+
+#     gauss_cat_mix_params2 = {
+#         'n_samples' : 10000,
+#         'ind_params' : [],
+#         'cond_params' : [],
+#         'means' : [],
+#         'covs' : []
+
+#     }
