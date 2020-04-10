@@ -4,7 +4,7 @@ import json
 import shutil
 import numpy as np
 from gan_thesis.data.datagen import *
-from definitions import DATA_DIR, ROOT_DIR, mvn_test1, mvn_test2, mvn_mix_test1
+from definitions import DATA_DIR, ROOT_DIR, mvn_test1, mvn_test2, mvn_mix_test1, ln_test1, ln_test2
 
 
 class Dataset:
@@ -228,13 +228,14 @@ def load_gauss_cond(pathname, data_params):
 def load_ln(pathname, data_params):
     n_samples = data_params['n_samples']
     mean = data_params['mean']
-    cov = data_params['cov']
+    var = data_params['var']
+    corr = data_params['corr']
     if data_params.get('seed') is None:
         seed = np.random.randint(10000)
     else:
         seed = data_params.get('seed')
 
-    df, info = log_normal_df(n_samples, mean, cov, seed)
+    df, info = log_normal_df(n_samples, mean, var, corr, seed)
     info['seed'] = seed
     info['continuous_columns'] = df.columns.to_list()
     info['discrete_columns'] = []
@@ -290,9 +291,10 @@ load_wrapper = {
 
 def main():
 
-    load_data('mvn-test1', data_params=mvn_test1)
-    load_data('mvn-test2', data_params=mvn_test2)
-
+    #load_data('mvn-test1', data_params=mvn_test1)
+    #load_data('mvn-test2', data_params=mvn_test2)
+    load_data('ln-test1', data_params=ln_test1)
+    load_data('ln-test2', data_params=ln_test2)
 
 if __name__ == '__main__':
     main()
