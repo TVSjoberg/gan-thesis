@@ -35,7 +35,7 @@ def prediction_score(train_x, train_y, test_x, test_y, metric, model, target):
     elif metric == "accuracy":
         return accuracy_score(test_y, test)
     elif metric == "r2":
-        return [r2_score(test_y, test)]
+        return r2_score(test_y, test)
     else:
         raise Exception("Metric not recognized.")
 

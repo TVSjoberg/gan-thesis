@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 
-TEST_IDENTIFIER = ''
+TEST_IDENTIFIER = 'mvn-test2'
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(ROOT_DIR, 'datasets', TEST_IDENTIFIER)
