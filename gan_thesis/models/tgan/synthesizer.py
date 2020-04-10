@@ -55,7 +55,7 @@ def build_and_train(params):
                         z_dim=int(params.get('embedding_dim')), learning_rate=params.get('learning_rate'),
                         num_gen_rnn=int(params.get('gen_num_layers')), num_gen_feature=int(params.get('gen_layer_sizes')),
                         num_dis_layers=int(params.get('crit_num_layers')), num_dis_hidden=int(params.get('crit_layer_sizes')),
-                        max_epoch=EPOCHS, steps_per_epoch=115,
+                        max_epoch=EPOCHS, steps_per_epoch=45,
                         restore_session=False, output=savestr)
     print('Fitting a TGAN model for {0} epochs...'.format(EPOCHS))
     train_copy = d.train.copy()
