@@ -13,6 +13,20 @@ from hyperopt import hp
 
 EPOCHS = 300
 
+DEF_PARAMS = {
+            'eval': 'all',
+            # NN Hyperparameters
+            'embedding_dim': 128,
+            'gen_num_layers': 2,
+            'gen_layer_sizes': 256,
+            'crit_num_layers': 2,
+            'crit_layer_sizes': 256,
+            'mode' : 'wgan-gp',
+            'gp_const' : 10,
+            'n_critic' : 5,
+            'batch_size': 500,
+        }
+
 # HYPEROPT SPACE
 space = {
     'embedding_dim': 2 ** hp.quniform('embedding_dim', 4, 9, 1),
@@ -75,7 +89,7 @@ def main(params=None, optim=False):
     if params is None:
         params = {
             # Regular parameters
-            'training_set': 'mvn',
+            'training_set': 'mvn_mixture-test1',
             'eval': 'all',
             # NN Hyperparameters
             'embedding_dim': 128,
