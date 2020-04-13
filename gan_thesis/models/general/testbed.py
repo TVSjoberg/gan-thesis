@@ -7,7 +7,7 @@ import os
 
 def main():
 
-    for data in ['mvn-test1', 'mvn-test2']:
+    for data in ['mvn-test2_highfeatures']:
 
         params = gan.DEF_PARAMS
         params['training_set'] = data
