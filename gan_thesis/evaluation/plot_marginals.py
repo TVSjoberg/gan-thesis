@@ -23,7 +23,10 @@ def plot_marginals(real, synthetic, dataset, model, force=True):
         sns.distplot(real.iloc[:, i], label="Real")
         plt.legend()
 
+<<<<<<< HEAD
     basepath = os.path.join(RESULT_DIR, dataset, model)
+=======
+>>>>>>> refs/remotes/origin/master
     alist = dataset.split(sep='-', maxsplit=1)
     dataset = alist[0]
     basepath = os.path.join(RESULT_DIR, *alist, model)

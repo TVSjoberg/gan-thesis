@@ -1,1 +1,0 @@
-{"dist 0": {"type": "log-normal", "mean": [0, 0.5, 1], "covariance": [[1.2, 0.2, 0.2], [0.2, 1.2, 0.2], [0.2, 0.2, 1.2]], "Proportion of total": 0.5}, "dist 1": {"type": "log-normal", "mean": [2, 3, 5], "covariance": [[4.0, 1.0, 1.0], [1.0, 4.0, 1.0], [1.0, 1.0, 4.0]], "Proportion of total": 0.5}, "seed": 5203, "continuous_columns": ["c0", "c1", "c2"], "discrete_columns": []}

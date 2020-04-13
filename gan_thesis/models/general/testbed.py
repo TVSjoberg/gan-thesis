@@ -1,5 +1,5 @@
-# import gan_thesis.models.ctgan.synthesizer as gan
-import gan_thesis.models.tgan.synthesizer as gan
+import gan_thesis.models.ctgan.synthesizer as gan
+# import gan_thesis.models.tgan.synthesizer as gan
 import shutil
 import os
 # import gan_thesis.models.wgan.synthesizer as gan

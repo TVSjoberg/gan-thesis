@@ -142,7 +142,6 @@ def main(params=None, optim=True):
         else:
             # Train or load CTGAN model
             filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model') + '_default')
-            filename2 = os.path.join(DATA_DIR, params.get('training_set'), params.get('model'))
             if os.path.isfile(filename):
                 # my_tgan = TGANModel.load(filename)
                 print('Successfully loaded old TGAN model from {0}'.format(filename))
@@ -159,7 +158,6 @@ def main(params=None, optim=True):
 
     # Evaluate fitted model
     if params['eval'] == 'all':
-        print(dataset.train.dtypes)
         print('Starting MLE evaluation on samples...')
         discrete_columns, continuous_columns = dataset.get_columns()
         plot_predictions_by_dimension(real=dataset.train, samples=samples, data_test=dataset.test,
