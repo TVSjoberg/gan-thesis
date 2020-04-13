@@ -1,6 +1,7 @@
 
 import numpy as np
 import pandas as pd
+from scipy.stats import random_correlation
 
 
 def multivariate_df(n_samples, mean, var, corr, seed=False, name = 'c'):
@@ -250,8 +251,12 @@ def corr_var_to_cov(corr, var):
     return res
      
     
+def r_corr(size):
+    r_arr = np.random.uniform(size = size)
+    r_arr = len(r_arr)*r_arr/sum(r_arr)
+    return random_correlation.rvs(r_arr)   
     
-    
+
     
 
 def col_name_gen(num_cols, common_name):

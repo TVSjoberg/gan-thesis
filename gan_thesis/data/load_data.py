@@ -4,7 +4,7 @@ import json
 import shutil
 import numpy as np
 from gan_thesis.data.datagen import *
-from definitions import DATA_DIR, ROOT_DIR, mvn_test1, mvn_test2, mvn_mix_test1, ln_test1, ln_test2
+from definitions import DATA_DIR, ROOT_DIR, mvn_test1, mvn_test2, mvn_mix_test1, mvn_mix_test2, ln_test1, ln_test2
 
 
 class Dataset:
@@ -33,6 +33,7 @@ def load_data(dataset, data_params=None):
     pathname = os.path.join(DATA_DIR, *alist)
     filelist = ['train.csv', 'test.csv', 'data.csv', 'info.json']
     filelist = map(lambda x: os.path.join(pathname, x), filelist)
+    print(pathname)
     if not all([os.path.isfile(f) for f in filelist]):
         if os.path.exists(pathname):
             shutil.rmtree(pathname)
@@ -279,22 +280,24 @@ def save_samples(df, dataset, model, force=True):
 load_wrapper = {
     'adult': load_adult,
     'mvn': load_mvn,
-    'mvn-mixture': load_mvn_mixture,
+    'mvn_mixture': load_mvn_mixture,
     'ln': load_ln,
-    'ln-mixture': load_ln_mixture,
+    'ln_mixture': load_ln_mixture,
     'cat': load_multinomial,
     'cond-cat' : load_cond_multinomial,
-    'cat-mix-gauss' : load_gauss_cond
+    'cat_mix-gauss' : load_gauss_cond
     
 }
 
 
 def main():
 
+    load_data('mvn_mixture-test1', data_params = mvn_mix_test1)
+    load_data('mvn_mixture-test2', data_params = mvn_mix_test2)
     #load_data('mvn-test1', data_params=mvn_test1)
     #load_data('mvn-test2', data_params=mvn_test2)
-    load_data('ln-test1', data_params=ln_test1)
-    load_data('ln-test2', data_params=ln_test2)
+    #load_data('ln-test1', data_params=ln_test1)
+    #load_data('ln-test2', data_params=ln_test2)
 
 if __name__ == '__main__':
     main()

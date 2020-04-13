@@ -75,7 +75,7 @@ def main(params=None, optim=False):
     if params is None:
         params = {
             # Regular parameters
-            'training_set': 'mvn',
+            'training_set': 'mvn_mixture-test1',
             'eval': 'all',
             # NN Hyperparameters
             'embedding_dim': 128,
