@@ -198,7 +198,7 @@ def multinomial_cond(n_samples, ind_probabilities, cond_probabilities, seed=Fals
         temp_li2 = []
         
         for j in range(len(unique_labels)):
-            
+            print(cond_probabilities)
             temp_n = len(ind_df[ind_df[ind_df.columns[i]] == unique_labels[j]])
             temp_df, temp_info = multinomial(
                 temp_n, cond_probabilities[i][j], seed, 'cond_feat_'+str(i))
@@ -247,13 +247,13 @@ def corr_var_to_cov(corr, var):
     res = corr*var
     var = var.reshape(len(var),1)
     
-    res = corr*var
+    res = res*var
     return res
      
     
 def r_corr(size):
     r_arr = np.random.uniform(size = size)
-    r_arr = len(r_arr)*r_arr/sum(r_arr)
+    r_arr = size*r_arr/sum(r_arr)
     return random_correlation.rvs(r_arr)   
     
 

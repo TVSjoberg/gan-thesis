@@ -9,6 +9,8 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(ROOT_DIR, 'datasets', TEST_IDENTIFIER)
 RESULT_DIR = os.path.join(ROOT_DIR, 'results', TEST_IDENTIFIER)
 
+unif = np.random.uniform  # Shorthand
+
 
 mvn_test1 = {
     # 3 INDEPENDENT features
@@ -32,6 +34,14 @@ mvn_test2 = {
              [-0.3, 0.8, 1]]
 }
 
+
+mvn_test3 = {
+    'n_samples': 10000,
+    'mean': unif(-3, 3, 9).tolist(),
+    'var': unif(0, 1, 9).tolist(),
+    'corr': r_corr(9).tolist()
+
+}
 ln_test1 = mvn_test1.copy()
 ln_test2 = mvn_test2.copy()
 
@@ -41,7 +51,6 @@ ln_test2 = mvn_test2.copy()
 # 2 modes minority
 # 2 modes minority close
 # 5 modes
-unif = np.random.uniform
 rand_prop = unif(0, 1, 5)
 rand_prop = (rand_prop/sum(rand_prop))
 
@@ -62,17 +71,11 @@ mvn_mix_test1 = {
     ],
 
     'corrs': [
-        np.eye(4).tolist(),
-        np.eye(4).tolist(),
-        np.eye(4).tolist(),
-        np.eye(4).tolist()
+        np.eye(4).tolist() for i in range(4)
             ],
 
     'vars': [
-        np.ones((4, 1)).tolist(),
-        np.ones((4, 1)).tolist(),
-        np.ones((4, 1)).tolist(),
-        np.ones((4, 1)).tolist()
+        np.ones((4, 1)).tolist() for i in range(4)
             ]
 
 }
@@ -97,9 +100,7 @@ mvn_mix_test2 = {
 
     ],
     'corrs': [
-        r_corr(size).tolist(),
-        r_corr(size).tolist(),
-        r_corr(size).tolist(),
+        r_corr(size).tolist() for i in range(3)
     ],
     'vars': [
         unif(0, 1, size).tolist() for i in range(3)
@@ -109,3 +110,56 @@ mvn_mix_test2 = {
 
 
 # ln COPY AV MVN
+rand_prop = unif(0, 1, 5)
+rand_prop = rand_prop/sum(rand_prop)
+
+cat_test1 = {
+    'n_samples': 10000,
+    'probabilities': [
+        [0.5, 0.5],
+        [0.1, 0.2, 0.7],
+        rand_prop.tolist()
+    ],
+
+}
+
+cond_cat_test1 = {
+    'n_samples': 10000,
+    'ind_probs': [
+        [0.33, 0.33, 0.34]
+    ],
+    'cond_probs': [
+        [
+            [
+                [0.8, 0.1, 0.1]
+            ],
+            [
+                [0.1, 0.8, 0.1]],
+            [
+                [0.1, 0.1, 0.8]
+            ]
+        ]
+    ]
+}
+
+gauss_mix_cond_test1 = {
+    'n_samples': 10000,
+    'ind_probs': [[0.33, 0.33, 0.34]],
+    'means': [
+        [
+            [0, 0, 0],
+            [2, 2, 2],
+            [4, 4, 4]
+        ]
+    ],
+    'vars': [
+        [
+            unif(0.5, 1.5, 3).tolist() for i in range(3)
+        ]
+    ],
+    'corrs': [
+        [
+            r_corr(3).tolist() for i in range(3)
+        ]
+    ]
+}

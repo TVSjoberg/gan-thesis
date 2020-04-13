@@ -4,7 +4,7 @@ import json
 import shutil
 import numpy as np
 from gan_thesis.data.datagen import *
-from definitions import DATA_DIR, ROOT_DIR, mvn_test1, mvn_test2, mvn_mix_test1, mvn_mix_test2, ln_test1, ln_test2
+from definitions import DATA_DIR, ROOT_DIR, mvn_test1, mvn_test2, mvn_test3, mvn_mix_test1, mvn_mix_test2, ln_test1, ln_test2, cat_test1, cond_cat_test1, gauss_mix_cond_test1
 
 
 class Dataset:
@@ -175,7 +175,8 @@ def load_multinomial(pathname, data_params):
     
     df, info = multinomial(n_samples, probabilities, seed=seed)
     info['seed'] = seed
-    info['continuous_columns'] = df.columns.to_list()
+    info['discrete_columns'] = df.columns.to_list()
+    info['continuous_columns'] =[]
     save_data(df, info, pathname)
 
 
@@ -190,7 +191,8 @@ def load_cond_multinomial(pathname, data_params):
     
     df, info= multinomial_cond(n_samples, ind_probs, cond_probs, seed)
     info['seed'] = seed
-    info['continuous_columns'] = df.columns.to_list()
+    info['discrete_columns'] = df.columns.to_list()
+    info['continuous_columns'] =[]
     save_data(df, info, pathname)
 
 
@@ -284,18 +286,22 @@ load_wrapper = {
     'ln': load_ln,
     'ln_mixture': load_ln_mixture,
     'cat': load_multinomial,
-    'cond-cat' : load_cond_multinomial,
-    'cat_mix-gauss' : load_gauss_cond
+    'cond_cat' : load_cond_multinomial,
+    'cat_mix_gauss' : load_gauss_cond
     
 }
 
 
 def main():
-
-    load_data('mvn_mixture-test1', data_params = mvn_mix_test1)
-    load_data('mvn_mixture-test2', data_params = mvn_mix_test2)
-    #load_data('mvn-test1', data_params=mvn_test1)
-    #load_data('mvn-test2', data_params=mvn_test2)
+    
+    load_data('cat_mix_gauss-test1', data_params = gauss_mix_cond_test1)
+    load_data('cond_cat-test1', data_params = cond_cat_test1)
+    # load_data('cat-test1', data_params = cat_test1)
+    # load_data('mvn-test3', data_params=mvn_test3)
+    # load_data('mvn_mixture-test1', data_params = mvn_mix_test1)
+    # load_data('mvn_mixture-test2', data_params = mvn_mix_test2)
+    # load_data('mvn-test1', data_params=mvn_test1)
+    # load_data('mvn-test2', data_params=mvn_test2)
     #load_data('ln-test1', data_params=ln_test1)
     #load_data('ln-test2', data_params=ln_test2)
 
