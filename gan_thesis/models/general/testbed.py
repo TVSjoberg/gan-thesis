@@ -1,14 +1,14 @@
-import gan_thesis.models.ctgan.synthesizer as gan
-# import gan_thesis.models.tgan.synthesizer as gan
+
 import shutil
 import os
-# import gan_thesis.models.wgan.synthesizer as gan
+import gan_thesis.models.wgan.synthesizer as gan
+
 
 
 def main():
 
-    for data in ['mvn-test1', 'mvn-test2']:
-
+    #for data in ['mvn-test1', 'mvn-test2', 'mvn_mixture-test1', 'mvn_mixture-test2']:
+    for data in  ['cond_cat-test1', 'cat_mix_gauss-test1']:
         params = gan.DEF_PARAMS
         params['training_set'] = data
         gan.main(params, optim=False)
