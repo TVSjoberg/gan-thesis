@@ -5,6 +5,7 @@ import shutil
 import numpy as np
 from gan_thesis.data.datagen import *
 from definitions import DATA_DIR, ROOT_DIR, mvn_test1, mvn_test2, mvn_test3, mvn_mix_test1, mvn_mix_test2, ln_test1, ln_test2, cat_test1, cond_cat_test1, gauss_mix_cond_test1
+from params import mvn_test1_highfeature, mvn_test2_highfeature
 
 
 class Dataset:
@@ -33,7 +34,6 @@ def load_data(dataset, data_params=None):
     pathname = os.path.join(DATA_DIR, *alist)
     filelist = ['train.csv', 'test.csv', 'data.csv', 'info.json']
     filelist = map(lambda x: os.path.join(pathname, x), filelist)
-    print(pathname)
     if not all([os.path.isfile(f) for f in filelist]):
         if os.path.exists(pathname):
             shutil.rmtree(pathname)
@@ -63,40 +63,39 @@ def load_adult(dirname, *args):
                     'workclass',
                     'fnlwgt',
                     'education',
-                    'education-num',
-                    'marital-status',
+                    'marital.status',
                     'occupation',
                     'relationship',
                     'race',
                     'sex',
-                    'capital-gain',
-                    'capital-loss',
-                    'hours-per-week',
-                    'native-country',
+                    'capital.gain',
+                    'capital.loss',
+                    'hours.per.week',
+                    'native.country',
                     'income'],
 
         "discrete_columns": ['workclass',
                              'education',
-                             'marital-status',
+                             'marital.status',
                              'occupation',
                              'relationship',
                              'race',
                              'sex',
-                             'native-country',
+                             'native.country',
                              'income'],
 
         "continuous_columns": ['age',
                                'fnlwgt',
-                               'education-num',
-                               'capital-gain',
-                               'capital-loss',
-                               'hours-per-week'],
+                               'capital.gain',
+                               'capital.loss',
+                               'hours.per.week'],
         "n_test": n_test,
         "identifier": 'adult'
     }
 
     cc = info.get('columns')
-    df = pd.read_csv(os.path.join(ROOT_DIR, 'adult.csv'), names=cc, header=0)
+    df = pd.read_csv(os.path.join(ROOT_DIR, 'adult.csv'), usecols=cc, header=0)
+
     # df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',
     #                 names=cc, header=0)
     df = df.sample(frac=1).reset_index(drop=True)
@@ -130,9 +129,9 @@ def load_mvn_mixture(pathname, data_params):
 
 def load_mvn(pathname, data_params):
     n_samples = data_params['n_samples']
-    mean = data_params['mean']
-    corr = data_params['corr']
-    var = data_params['var']
+    mean = data_params.get('mean')
+    corr = data_params.get('corr')
+    var = data_params.get('var')
     if data_params.get('seed') is None:
         seed = np.random.randint(10000)
     else:
@@ -293,7 +292,7 @@ load_wrapper = {
 
 
 def main():
-    
+
     load_data('cat_mix_gauss-test1', data_params = gauss_mix_cond_test1)
     load_data('cond_cat-test1', data_params = cond_cat_test1)
     # load_data('cat-test1', data_params = cat_test1)

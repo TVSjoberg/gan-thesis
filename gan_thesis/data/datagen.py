@@ -11,8 +11,7 @@ def multivariate_df(n_samples, mean, var, corr, seed=False, name = 'c'):
     cov = corr_var_to_cov(corr, var)
     if (len(mean) == 1):    
         data = np.random.normal(mean, cov[0]**2, n_samples)
-    else: 
-        
+    else:
         data = np.random.multivariate_normal(mean, cov, n_samples)
 
     cols = col_name_gen(len(mean), name)
