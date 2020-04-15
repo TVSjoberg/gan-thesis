@@ -35,8 +35,8 @@ def load_data(dataset, data_params=None):
     filelist = ['train.csv', 'test.csv', 'data.csv', 'info.json']
     filelist = map(lambda x: os.path.join(pathname, x), filelist)
     if not all([os.path.isfile(f) for f in filelist]):
-        if os.path.exists(pathname):
-            shutil.rmtree(pathname)
+        # if os.path.exists(pathname):
+            # shutil.rmtree(pathname)
         os.makedirs(pathname)
         load_wrapper[dataset](pathname, data_params)
 
@@ -295,14 +295,14 @@ def main():
 
     load_data('cat_mix_gauss-test1', data_params = gauss_mix_cond_test1)
     load_data('cond_cat-test1', data_params = cond_cat_test1)
-    # load_data('cat-test1', data_params = cat_test1)
-    # load_data('mvn-test3', data_params=mvn_test3)
-    # load_data('mvn_mixture-test1', data_params = mvn_mix_test1)
-    # load_data('mvn_mixture-test2', data_params = mvn_mix_test2)
-    # load_data('mvn-test1', data_params=mvn_test1)
-    # load_data('mvn-test2', data_params=mvn_test2)
-    #load_data('ln-test1', data_params=ln_test1)
-    #load_data('ln-test2', data_params=ln_test2)
+    load_data('cat-test1', data_params = cat_test1)
+    load_data('mvn-test3', data_params=mvn_test3)
+    load_data('mvn_mixture-test1', data_params = mvn_mix_test1)
+    load_data('mvn_mixture-test2', data_params = mvn_mix_test2)
+    #load_data('mvn-test1', data_params=mvn_test1)
+    #load_data('mvn-test2', data_params=mvn_test2)
+    load_data('ln-test1', data_params=ln_test1)
+    load_data('ln-test2', data_params=ln_test2)
 
 if __name__ == '__main__':
     main()

@@ -156,7 +156,12 @@ def main(params=None, optim=True):
         print('Plotting association matrices...')
         diff = plot_association(dataset, samples, params.get('training_set'), params.get('model'))
         print(diff)
-        save_json(diff, os.path.join(RESULT_DIR, params.get('training_set'), params.get('model'), 'association_difference'))
+        alist = params.get('training_set').split(sep='-', maxsplit=1)
+        dataset = alist[0]
+        basepath = os.path.join(RESULT_DIR, *alist, params.get('model'))
+        filepath = os.path.join(basepath, '{0}_{1}_c_marginals.png'.format(dataset, params.get('model')))
+
+        save_json(diff, filepath)
 
 
 if __name__ == "__main__":
