@@ -52,9 +52,6 @@ def plot_marginals(real, synthetic, dataset, model, force=True):
         sns.countplot(x=real.columns.tolist()[i], data=result, hue='Synthetic')
         plt.legend()
 
-    alist = dataset.split(sep='-', maxsplit=1)
-    dataset = alist[0]
-    basepath = os.path.join(RESULT_DIR, *alist, model)
     filepath = os.path.join(basepath, '{0}_{1}_d_marginals.png'.format(dataset, model))
     if not os.path.exists(basepath):
         os.makedirs(basepath)

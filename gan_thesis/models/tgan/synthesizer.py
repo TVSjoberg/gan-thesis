@@ -55,7 +55,7 @@ def build_and_train(params):
                         z_dim=int(params.get('embedding_dim')), learning_rate=params.get('learning_rate'),
                         num_gen_rnn=int(params.get('gen_num_layers')), num_gen_feature=int(params.get('gen_layer_sizes')),
                         num_dis_layers=int(params.get('crit_num_layers')), num_dis_hidden=int(params.get('crit_layer_sizes')),
-                        max_epoch=EPOCHS, steps_per_epoch=10000,
+                        max_epoch=EPOCHS, steps_per_epoch=50,
                         restore_session=False, output=savestr)
     print('Fitting a TGAN model for {0} epochs...'.format(EPOCHS))
     train_copy = d.train.copy()
@@ -68,7 +68,7 @@ def build_and_train(params):
 def sampler(my_tgan, params):
     d = params.get('dataset')
     train = d.train
-    samples = my_tgan.sample(len(train)*10)
+    samples = my_tgan.sample(len(train))
     col = train.columns.to_list()
     samples.columns = col
     print(train.head())
@@ -168,7 +168,12 @@ def main(params=None, optim=True):
         print('Plotting association matrices...')
         diff = plot_association(dataset, samples, params.get('training_set'), params.get('model'))
         print(diff)
-        save_json(diff, os.path.join(RESULT_DIR, params.get('training_set'), params.get('model'), 'association_difference'))
+        alist = params.get('training_set').split(sep='-', maxsplit=1)
+        dataset = alist[0]
+        basepath = os.path.join(RESULT_DIR, *alist, params.get('model'))
+        filepath = os.path.join(basepath, '{0}_{1}_c_marginals.png'.format(dataset, params.get('model')))
+
+        save_json(diff, filepath)
 
 
 if __name__ == "__main__":
