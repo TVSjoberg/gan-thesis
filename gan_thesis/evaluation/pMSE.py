@@ -1,18 +1,21 @@
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
+from gan_thesis.evaluation.machine_learning import *
 
 
 def pMSE(dataframe, ind_var):
     # This should be implemented with multiple models chosen by some variable
     # For now it will be done with logistic regression as there is an analytical solutionn to the null value.
     # ind_var is the name of the indicator variable
+    
     model = LogisticRegression(penalty='none').fit(dataframe.drop(ind_var, axis=1),
                                                    dataframe[ind_var])
     prediction = model.predict_proba(dataframe.drop(ind_var, axis=1))
     c = sum(dataframe[ind_var] == 0) / len(dataframe)
     pmse = (sum((prediction[:, 1] - 0.5) ** 2)) / len(dataframe)
     return pmse
+
 
 
 def null_pmse_est(dataframe, ind_var, n_iter):

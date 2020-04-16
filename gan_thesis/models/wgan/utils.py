@@ -16,15 +16,31 @@ class ClipConstraint(keras.constraints.Constraint):
         return {'clip_value': self.clip_value}
 
 
+def gumb_samp(shape, eps=1e-20): 
+  """Sample from Gumbel(0, 1)"""
+  U = tf.random.uniform(shape,minval=0,maxval=1)
+  return -tf.math.log(-tf.math.log(U + eps) + eps)
+
+def gumbel_softmax_sample(logits, temperature): 
+  """ Draw a sample from the Gumbel-Softmax distribution"""
+  y = logits + gumb_samp(tf.shape(logits))
+  return tf.nn.softmax( y / temperature)
+
+
+
 def sample_gumbel(logits, temperature, cat_dims=(), hard=False):
     start_dim = tf.shape(logits)[1] - sum(cat_dims)
     for dim in cat_dims:  # Draw gumbel soft-max for each categorical variable
         temp_logits = logits[:, start_dim:start_dim + dim]
-        dist = tfp.distributions.RelaxedOneHotCategorical(temperature, logits=temp_logits)
-        temp_logits = dist.sample()
+        #dist = tfp.distributions.RelaxedOneHotCategorical(temperature, logits=temp_logits)
+        #temp_logits = dist.sample()
+        temp_logits = gumbel_softmax_sample(temp_logits, temperature)
 
         if hard:  # make One_hot
-            temp_logits = tf.one_hot(tf.math.argmax(temp_logits, axis=1), dim)
+            logits_hard = tf.cast(tf.equal(temp_logits,tf.reduce_max(temp_logits,1,keepdims=True)),temp_logits.dtype)
+            
+            temp_logits = tf.stop_gradient(logits_hard - temp_logits) + temp_logits
+            #temp_logits = tf.one_hot(tf.math.argmax(temp_logits, axis=1), dim)
 
         logits = tf.concat([logits[:, :start_dim], temp_logits, logits[:, start_dim + dim:]], axis=1)
         # logits[:, start_dim:start_dim+dim] = temp_logits

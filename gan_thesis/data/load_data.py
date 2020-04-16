@@ -96,8 +96,8 @@ def load_adult(dirname, *args):
     cc = info.get('columns')
     df = pd.read_csv(os.path.join(ROOT_DIR, 'adult.csv'), usecols=cc, header=0)
 
-    # df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',
-    #                 names=cc, header=0)
+    #df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',
+                    #usecols=cc, header=0)
     df = df.sample(frac=1).reset_index(drop=True)
     train, test = train_test_split(df=df, n_test=n_test)
     df.to_csv(os.path.join(dirname, 'data.csv'), index=False)

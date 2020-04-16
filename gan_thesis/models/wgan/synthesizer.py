@@ -1,8 +1,9 @@
 from gan_thesis.evaluation.machine_learning import plot_predictions_by_dimension
 from gan_thesis.evaluation.plot_marginals import plot_marginals
+from gan_thesis.evaluation.association import plot_association
 from gan_thesis.evaluation.pMSE import *
 from gan_thesis.data.load_data import *
-from gan_thesis.models.general.utils import save_model, load_model
+from gan_thesis.models.general.utils import save_model, load_model, save_json
 from gan_thesis.models.general.optimization import optimize
 from gan_thesis.models.wgan.wgan import *
 
@@ -25,6 +26,8 @@ DEF_PARAMS = {
             'gp_const' : 10,
             'n_critic' : 5,
             'batch_size': 500,
+            'hard' : False,
+            'temp_anneal' : False
         }
 
 # HYPEROPT SPACE
@@ -43,7 +46,7 @@ def build_and_train(params):
     gen_layers = [int(params['gen_layer_sizes'])] * int(params['gen_num_layers'])
     crit_layers = [int(params['crit_layer_sizes'])] * int(params['crit_num_layers'])
     d = params.get('dataset')
-
+    
     params['gen_dim'] = gen_layers
     params['crit_dim'] = crit_layers
     
@@ -54,7 +57,9 @@ def build_and_train(params):
     my_wgan.train(d.train, EPOCHS, 
                   d.info.get('discrete_columns'), 
                   d.info.get('continuous_columns'), 
-                  batch_size=params['batch_size'])
+                  batch_size=params['batch_size'], 
+                  hard=params['hard'],
+                   temp_anneal = params['temp_anneal'])
     print('Successfully fitted a wgan model')
 
     return my_wgan
@@ -89,7 +94,7 @@ def main(params=None, optim=False):
     if params is None:
         params = {
             # Regular parameters
-            'training_set': 'mvn_mixture-test1',
+            'training_set': 'cat-test1',
             'eval': 'all',
             # NN Hyperparameters
             'embedding_dim': 128,
@@ -101,6 +106,8 @@ def main(params=None, optim=False):
             'gp_const' : 10,
             'n_critic' : 5,
             'batch_size': 500,
+            'hard' : False,
+            'temp_anneal' : False
         }
 
     if optim:
@@ -109,7 +116,7 @@ def main(params=None, optim=False):
     print('Starting wgan-gp main script with following parameters:')
     for key in params:
         print(key, params[key])
-    params['model'] = 'wgan-gp'
+    params['model'] = 'wgan'
 
     # Load dataset
     print(params.get('training_set'))
@@ -143,7 +150,7 @@ def main(params=None, optim=False):
                 print('Saved the wgan model at {0}'.format(filename))
             except Exception as e:
                 print('Model was not saved due to an error: {0}'.format(e))
-                os.remove(filename)
+                #os.remove(filename)
                 
             #save_model(my_wgan, filename, force=True)
             #print('Saved the wgan model at {0}'.format(filename))
@@ -163,6 +170,14 @@ def main(params=None, optim=False):
                                       dataset=params.get('training_set'), model='wgan')
         print('Plotting marginals of real and sample data...')
         plot_marginals(dataset.train, samples, params.get('training_set'), 'wgan')
+        print('Plotting association matrices...')
+        diff = plot_association(dataset, samples, params.get('training_set'), params.get('model'))
+        print(diff)
+        alist = params.get('training_set').split(sep='-', maxsplit=1)
+        dataset = alist[0]
+        basepath = os.path.join(RESULT_DIR, *alist, params.get('model'))
+        filepath = os.path.join(basepath, '{0}_{1}_c_marginals.png'.format(dataset, params.get('model')))
+        save_json(diff, os.path.join(RESULT_DIR, params.get('training_set'), params.get('model'), 'association_difference'))
 
 
 if __name__ == "__main__":

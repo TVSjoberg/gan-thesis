@@ -2,6 +2,7 @@ import os
 import pickle
 import time
 from functools import partial
+import numpy as np
 
 import pandas as pd
 from tensorflow.keras import layers
@@ -140,49 +141,11 @@ class WGAN:
 
         return sample
 
-    '''
-    def train(self, Dataframe, epochs, cat_cols = [], cont_cols = [], hard = True, batch_size = 32, shuffle = True):
-        df = Dataframe.copy()
-        self.cat_cols = cat_cols
-        self.orignal_order_cols = list(df.columns) ## For restoring original order of data
-        temp_li = []
+
+
+    def train(self, dataframe, epochs, cat_cols=None, cont_cols=None, hard=False, temp_anneal = False ,batch_size=32, shuffle=True):
         
-        for cat in cat_cols:
-            temp_li.append(len(df[cat].unique()))
-        self.cat_dims = tuple(temp_li)
-
-        df = data_reorder(df, self.cat_cols)
         
-        self.scaler = dataScaler()
-        df = self.scaler.transform(df, cont_cols, self.cat_cols)
-        df = df.astype('float32')
-        self.oht_shuff_cols = list(df.columns)
-
-        dataset = df_to_dataset(df, shuffle, batch_size)
-        self.train_ds(dataset, epochs, self.cat_dims, hard)
-
-    
-    def train_ds(self, dataset, epochs, cat_dims = (), hard = True):
-
-        self.cat_dims = cat_dims
-
-        for epoch in range(epochs):
-            start = time.time()
-            
-            for data_batch in dataset:
-                c_loss = 0
-                g_loss = 0
-                for i in np.arange(0,self.n_critic):
-                    c_loss = self.train_step_c(data_batch, hard)
-                c_loss /= self.n_critic
-                g_loss = self.train_step_g(len(data_batch), hard)
-            if (epoch + 1) % 5 == 0:
-                #checkpoint.save(file_prefix = checkpoint_prefix)
-            
-                print('Time for epoch {} is {} sec \n with critic loss: {} and generator loss {}'.format(epoch+1, time.time()-start,c_loss, g_loss))
-    '''
-
-    def train(self, dataframe, epochs, cat_cols=None, cont_cols=None, hard=True, batch_size=32, shuffle=True):
         if cont_cols is None:
             cont_cols = []
         if cat_cols is None:
@@ -191,7 +154,7 @@ class WGAN:
         self.cat_cols = cat_cols
         self.orignal_order_cols = list(df.columns)  # For restoring original order of data
         temp_li = []
-
+        
         for cat in cat_cols:
             temp_li.append(len(df[cat].unique()))
         self.cat_dims = tuple(temp_li)
@@ -202,11 +165,12 @@ class WGAN:
         df = df.astype('float32')
         self.oht_shuff_cols = list(df.columns)
         dataset = df_to_dataset(df, shuffle, batch_size)
-        self.train_ds(dataset, epochs, len(df), batch_size, self.cat_dims, hard)
+        self.train_ds(dataset, epochs, len(df), batch_size, self.cat_dims, hard, temp_anneal)
 
-    def train_ds(self, dataset, epochs, n_data, batch_size=32, cat_dims=(), hard=True):
+    def train_ds(self, dataset, epochs, n_data, batch_size=32, cat_dims=(), hard=False, temp_anneal = False):
 
         self.cat_dims = cat_dims
+        temp_increment = self.temperature/epochs
         # iter_per_epoch =  math.ceil(n_data/batch_size)
         for epoch in range(epochs):
             start = time.time()
@@ -224,9 +188,10 @@ class WGAN:
                 # checkpoint.save(file_prefix = checkpoint_prefix)
 
                 print('Time for epoch {} is {} sec \n with critic loss: {} and generator loss {}'.format(epoch + 1,
-                                                                                                         time.time() - start,
-                                                                                                         c_loss,
-                                                                                                         g_loss))
+                                                                                                          time.time() - start, 
+                                                                                                            c_loss, g_loss))
+            if (temp_anneal):
+                self.set_temperature(self.temperature-temp_increment)
             dataset = dataset.shuffle(buffer_size=10000)
 
     @tf.function
@@ -239,6 +204,7 @@ class WGAN:
 
             fake_data = self.generator(noise, training=True)
             if self.cat_dims != ():
+                #print('test')
                 fake_data = sample_gumbel(fake_data, self.temperature, self.cat_dims, hard)
 
             real_output = self.critic(data_batch, training=True)
@@ -250,14 +216,12 @@ class WGAN:
                 crit_loss += gp_loss
 
             critic_gradients = crit_tape.gradient(crit_loss, self.critic.trainable_variables)
-
             self.crit_opt.apply_gradients(zip(critic_gradients, self.critic.trainable_variables))
         return crit_loss
 
     @tf.function
     def train_step_g(self, batch_size, hard):
         noise = tf.random.normal((batch_size, self.latent_dim))
-
         with tf.GradientTape() as gen_tape:
             fake_data = self.generator(noise, training=True)
             gen_tape.watch(fake_data)
@@ -267,8 +231,14 @@ class WGAN:
 
             fake_output = self.critic(fake_data, training=True)
             gen_loss = generator_loss(fake_output)
-
+            #print(gen_loss)
             generator_gradients = gen_tape.gradient(gen_loss, self.generator.trainable_variables)
+            # if self.i >1:
+            #     s = 0
+            #     for i in range(len(generator_gradients)):
+            #         s += np.sum(generator_gradients[i])
+            #     print(s)
+            # self.i += 1
             self.gen_opt.apply_gradients(zip(generator_gradients, self.generator.trainable_variables))
         return gen_loss
 
