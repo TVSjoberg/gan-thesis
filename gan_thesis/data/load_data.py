@@ -107,6 +107,33 @@ def load_adult(dirname, *args):
     with open(os.path.join(dirname, 'info.json'), "w") as write_file:
         json.dump(info, write_file)
 
+def load_credit(dirname, *args):
+    n_test = 29000  # Same as CTGAN paper
+    c = list(range(1, 29))
+    cc = ['V{0}'.format(str(x)) for x in c]
+    cc.insert(0, 'Time')
+    cc.append('Amount')
+    dc = ['Class']
+    info = {
+        "columns": cc + dc,
+
+        "discrete_columns": dc,
+
+        "continuous_columns": cc,
+        "n_test": n_test,
+        "identifier": 'credit'
+    }
+
+    cols = cc + dc
+    df = pd.read_csv(os.path.join(ROOT_DIR, 'creditcard.csv'), usecols=cols, header=0)
+    df = df.sample(frac=1).reset_index(drop=True)
+    train, test = train_test_split(df=df, n_test=n_test)
+    df.to_csv(os.path.join(dirname, 'data.csv'), index=False)
+    train.to_csv(os.path.join(dirname, 'train.csv'), index=False)
+    test.to_csv(os.path.join(dirname, 'test.csv'), index=False)
+
+    with open(os.path.join(dirname, 'info.json'), "w") as write_file:
+        json.dump(info, write_file)
 
 def load_mvn_mixture(pathname, data_params):
     n_samples = data_params['n_samples']
@@ -280,6 +307,7 @@ def save_samples(df, dataset, model, force=True):
 
 load_wrapper = {
     'adult': load_adult,
+    'credit': load_credit,
     'mvn': load_mvn,
     'mvn_mixture': load_mvn_mixture,
     'ln': load_ln,
@@ -293,16 +321,17 @@ load_wrapper = {
 
 def main():
 
-    load_data('cat_mix_gauss-test1', data_params = gauss_mix_cond_test1)
-    load_data('cond_cat-test1', data_params = cond_cat_test1)
-    load_data('cat-test1', data_params = cat_test1)
-    load_data('mvn-test3', data_params=mvn_test3)
-    load_data('mvn_mixture-test1', data_params = mvn_mix_test1)
-    load_data('mvn_mixture-test2', data_params = mvn_mix_test2)
-    #load_data('mvn-test1', data_params=mvn_test1)
-    #load_data('mvn-test2', data_params=mvn_test2)
-    load_data('ln-test1', data_params=ln_test1)
-    load_data('ln-test2', data_params=ln_test2)
+    # load_data('cat_mix_gauss-test1', data_params = gauss_mix_cond_test1)
+    # load_data('cond_cat-test1', data_params = cond_cat_test1)
+    # load_data('cat-test1', data_params = cat_test1)
+    # load_data('mvn-test3', data_params=mvn_test3)
+    # load_data('mvn_mixture-test1', data_params = mvn_mix_test1)
+    # load_data('mvn_mixture-test2', data_params = mvn_mix_test2)
+    # load_data('mvn-test1', data_params=mvn_test1)
+    # load_data('mvn-test2', data_params=mvn_test2)
+    # load_data('ln-test1', data_params=ln_test1)
+    # load_data('ln-test2', data_params=ln_test2)
+    load_data('credit')
 
 if __name__ == '__main__':
     main()

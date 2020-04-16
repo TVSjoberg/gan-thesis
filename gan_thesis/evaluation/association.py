@@ -112,9 +112,9 @@ def plot_all_association(complete_dataset, dataset, force=True):
 
     colormap = sns.diverging_palette(20, 220, n=256)
 
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, sharex='col', sharey='row', figsize=(20, 6))
-    cbar_ax = fig.add_axes([.95, .3, .02, .4])
-    plt.tight_layout()
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(20, 6))
+    cbar_ax = fig.add_axes([.95, .5, .02, .4])
+
     ax1.set_title('Real')
     ax1.set_aspect('equal')
 
@@ -167,6 +167,7 @@ def plot_all_association(complete_dataset, dataset, force=True):
                 cbar_ax=cbar_ax)
 
     plt.subplots_adjust(wspace=0.1)
+    plt.tight_layout()
 
     alist = dataset.split(sep='-', maxsplit=1)
     dataset = alist[0]
