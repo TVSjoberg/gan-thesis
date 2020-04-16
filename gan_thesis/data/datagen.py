@@ -126,7 +126,7 @@ def cat_mixture_gauss(cond_df, cond_info, means, varis, corrs, seed = False):
     
     
 
-def multinomial(n_samples, probabilities, seed=False, name='feature_'):
+def multinomial(n_samples, probabilities, seed=False, name='f_'):
     # n_samples: int ,  probabilites = nested list of probabilities
     info = {}
     if seed:
@@ -137,7 +137,7 @@ def multinomial(n_samples, probabilities, seed=False, name='feature_'):
 
     count = 0
     for prob in probabilities:
-        temp_label_names = col_name_gen(len(prob), name+str(count)+'_label_')
+        temp_label_names = col_name_gen(len(prob), name+str(count)+'_l_')
         temp_data = np.random.choice(temp_label_names, size=n_samples, p=prob)
 
         df[column_names[count]] = temp_data
@@ -179,7 +179,7 @@ def multinomial_cond(n_samples, ind_probabilities, cond_probabilities, seed=Fals
         np.random.seed()
 
     ind_df, ind_info = multinomial(
-        n_samples, ind_probabilities, seed, 'ind_feat_')
+        n_samples, ind_probabilities, seed, 'indf_')
     cond_df = pd.DataFrame()
     
     dim_count = ind_info['dim']
@@ -200,7 +200,7 @@ def multinomial_cond(n_samples, ind_probabilities, cond_probabilities, seed=Fals
             print(cond_probabilities)
             temp_n = len(ind_df[ind_df[ind_df.columns[i]] == unique_labels[j]])
             temp_df, temp_info = multinomial(
-                temp_n, cond_probabilities[i][j], seed, 'cond_feat_'+str(i))
+                temp_n, cond_probabilities[i][j], seed, 'cf_'+str(i))
             
             temp_li1.append(temp_df)
             temp_info['conditional on'] = unique_labels[j]
@@ -226,7 +226,7 @@ def multinomial_cond_extension(n_samples, true_ind_prob, ind_prob, cond_prob, se
     if seed:
         np.random.seed()
     
-    true_ind_df, true_ind_info = multinomial(n_samples, true_ind_prob, seed, 'true_ind_')    
+    true_ind_df, true_ind_info = multinomial(n_samples, true_ind_prob, seed, 'tif_')    
     cond_df, cond_info = multinomial_cond(n_samples, ind_prob, cond_prob, seed)
     
     df = pd.concat((true_ind_df, cond_df), axis=1)

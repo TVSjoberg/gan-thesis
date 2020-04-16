@@ -12,7 +12,7 @@ import pandas as pd
 from definitions import RESULT_DIR
 from hyperopt import hp
 
-EPOCHS = 25
+EPOCHS = 300
 
 DEF_PARAMS = {
             'eval': 'all',
@@ -172,8 +172,8 @@ def main(params=None, optim=False):
         alist = params.get('training_set').split(sep='-', maxsplit=1)
         dataset = alist[0]
         basepath = os.path.join(RESULT_DIR, *alist, params.get('model'))
-        filepath = os.path.join(basepath, '{0}_{1}_c_marginals.png'.format(dataset, params.get('model')))
-        save_json(diff, os.path.join(RESULT_DIR, params.get('training_set'), params.get('model'), 'association_difference'))
+        filepath = os.path.join(basepath, '{0}_{1}_ass_diff.json'.format(dataset, params.get('model')))
+        save_json(diff, filepath)
 
 
 if __name__ == "__main__":
