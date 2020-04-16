@@ -2,6 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from sklearn.ensemble import AdaBoostClassifier, AdaBoostRegressor
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.linear_model import LogisticRegression, LinearRegression
@@ -88,12 +89,11 @@ def predictions_by_dimension(train, test, discrete_columns, continuous_columns):
     return prediction_scores
 
 
-def abline(slope, intercept):
+def abline(slope, intercept, ax):
     """Plot a line from slope and intercept"""
-    axes = plt.gca()
-    x = np.array(axes.get_xlim())
+    x = np.array(ax.get_xlim())
     y = intercept + slope * x
-    plt.plot(x, y, '--')
+    ax.plot(x, y, '--')
 
 
 def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, continuous_columns,
@@ -125,3 +125,48 @@ def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, co
     score_y_by_dimension.to_csv(os.path.join(basepath, '{0}_{1}_ml_samples.csv'.format(dataset, model)), index=True)
 
     return score_x_by_dimension, score_y_by_dimension
+
+
+def plot_all_predictions_by_dimension(dataset, data, force=True):
+
+    real = dataset.train
+    data_test = dataset.test
+    discrete_columns, continuous_columns = dataset.get_columns()
+
+    samples_wgan = dataset.samples.get('wgan')
+    samples_tgan = dataset.samples.get('tgan')
+    samples_ctgan = dataset.samples.get('ctgan')
+    samples = [samples_wgan, samples_ctgan, samples_tgan]
+    models = ['wgan', 'ctgan', 'tgan']
+
+    fig, axn = plt.subplots(1, 3, figsize=(20, 6))
+
+    for i in range(3):
+        score_y_by_dimension = predictions_by_dimension(samples[i], data_test, discrete_columns, continuous_columns)
+        score_x_by_dimension = predictions_by_dimension(real, data_test, discrete_columns, continuous_columns)
+        mean_x_by_dimension = score_x_by_dimension.mean(axis=0)
+        mean_y_by_dimension = score_y_by_dimension.mean(axis=0)
+        ax = axn[i]
+        sns.scatterplot(mean_x_by_dimension, mean_y_by_dimension, ax=ax)
+        ax.set_title(models[i])
+        ax.set_xlim([0, 1])
+        ax.set_ylim([0, 1])
+        ax.set_ylabel("Sample features")
+        ax.set_xlabel("Real features")
+        abline(1, 0, ax)
+
+    alist = data.split(sep='-', maxsplit=1)
+    #dataset = alist[0]
+    basepath = os.path.join(RESULT_DIR, alist[0])
+    filepath = os.path.join(basepath, '{0}_all_ml_efficiency.png'.format(data))
+    if not os.path.exists(basepath):
+        os.makedirs(basepath)
+    if os.path.isfile(filepath) and force:
+        # os.remove(filepath)
+        print('foo')
+    plt.savefig(filepath)
+
+    #score_x_by_dimension.to_csv(os.path.join(basepath, '{0}_{1}_ml_real.csv'.format(dataset, model)), index=True)
+    #score_y_by_dimension.to_csv(os.path.join(basepath, '{0}_{1}_ml_samples.csv'.format(dataset, model)), index=True)
+
+    #return score_x_by_dimension, score_y_by_dimension

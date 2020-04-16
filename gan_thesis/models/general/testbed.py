@@ -2,6 +2,8 @@
 import shutil
 from gan_thesis.evaluation.pMSE import *
 from gan_thesis.evaluation.association import plot_all_association
+from gan_thesis.evaluation.machine_learning import *
+from gan_thesis.evaluation.plot_marginals import *
 from gan_thesis.data.load_data import load_data
 import os
 import gan_thesis.models.wgan.synthesizer as gan
@@ -43,11 +45,11 @@ def pmse_loop():
     output.to_csv(os.path.join(RESULT_DIR, 'pmse.csv'))
 
 def ass_loop():
-    for data in ['mvn-test2']:
+    for data in ['cat_mix_gauss-test1', 'cond_cat-test1', 'cat-test1', 'mvn-test1', 'mvn-test2', 'mvn-test3', 'mvn_mixture-test1', 'mvn_mixture-test2', 'ln-test1']:
 
         dataset = load_data(data)
-        plot_all_association(dataset, data)
-        break
+        plot_all_marginals(dataset, data)
+
 
 if __name__ == '__main__':
     main()
