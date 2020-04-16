@@ -12,7 +12,7 @@ import pandas as pd
 from definitions import RESULT_DIR
 from hyperopt import hp
 
-EPOCHS = 300
+EPOCHS = 25
 
 DEF_PARAMS = {
             'eval': 'all',
@@ -139,21 +139,17 @@ def main(params=None, optim=False):
     else:
         # Train or load wgan model
         filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model'))
-        if os.path.isfile(filename):
-            print(filename)
-            my_wgan = load_model(filename)
-            print('Successfully loaded old wgan model from {0}'.format(filename))
-        else:
-            my_wgan = build_and_train(params=params)
-            try:
-                save_model(my_wgan, filename, force = True)
-                print('Saved the wgan model at {0}'.format(filename))
-            except Exception as e:
-                print('Model was not saved due to an error: {0}'.format(e))
-                #os.remove(filename)
-                
-            #save_model(my_wgan, filename, force=True)
-            #print('Saved the wgan model at {0}'.format(filename))
+
+        my_wgan = build_and_train(params=params)
+        try:
+            save_model(my_wgan, filename, force = True)
+            print('Saved the wgan model at {0}'.format(filename))
+        except Exception as e:
+            print('Model was not saved due to an error: {0}'.format(e))
+            #os.remove(filename)
+            
+        #save_model(my_wgan, filename, force=True)
+        #print('Saved the wgan model at {0}'.format(filename))
 
     # Sample from model
     print('Sampling from the wgan model...')

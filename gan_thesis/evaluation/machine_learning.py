@@ -109,7 +109,7 @@ def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, co
     ax.set_title("Machine Learning Efficiency")
     ax.set_ylabel("Sample features")
     ax.set_xlabel("Real features")
-    abline(1, 0)
+    abline(1, 0, ax)
 
     alist = dataset.split(sep='-', maxsplit=1)
     dataset = alist[0]
