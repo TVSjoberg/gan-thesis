@@ -12,7 +12,7 @@ import pandas as pd
 from definitions import RESULT_DIR
 from hyperopt import hp
 
-EPOCHS = 300
+EPOCHS = 600
 
 DEF_PARAMS = {
             'eval': 'all',
@@ -94,7 +94,7 @@ def main(params=None, optim=False):
     if params is None:
         params = {
             # Regular parameters
-            'training_set': 'cat-test1',
+            'training_set': 'mvn-test3',
             'eval': 'all',
             # NN Hyperparameters
             'embedding_dim': 128,
@@ -125,6 +125,12 @@ def main(params=None, optim=False):
     
     print('Successfully loaded dataset {0}'.format(params.get('training_set')))
 
+    alist = params.get('training_set').split(sep='-', maxsplit=1)
+    basepath = os.path.join(RESULT_DIR, *alist, params.get('model'))
+    filepath = os.path.join(basepath, '{0}_{1}_ass_diff.json'.format(alist[0], params.get('model')))
+    params['log_directory'] = basepath#.replace('\\', '/')
+    
+    
     if optim:
         # Optimize or load wgan model
         filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model') + '_optimized')
@@ -169,10 +175,6 @@ def main(params=None, optim=False):
         print('Plotting association matrices...')
         diff = plot_association(dataset, samples, params.get('training_set'), params.get('model'))
         print(diff)
-        alist = params.get('training_set').split(sep='-', maxsplit=1)
-        dataset = alist[0]
-        basepath = os.path.join(RESULT_DIR, *alist, params.get('model'))
-        filepath = os.path.join(basepath, '{0}_{1}_ass_diff.json'.format(dataset, params.get('model')))
         save_json(diff, filepath)
 
 

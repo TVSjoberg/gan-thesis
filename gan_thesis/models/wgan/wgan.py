@@ -3,17 +3,16 @@ import pickle
 import time
 from functools import partial
 import numpy as np
+import datetime
+
 
 import pandas as pd
 from tensorflow.keras import layers
+from tensorflow.keras.metrics import Mean
 
 from gan_thesis.models.wgan.utils import *
 from gan_thesis.models.wgan.data import *
 
-"""
-gå från dataframe till dataset, m  col_names/nums
-len(data['name'].unique())
-"""
 
 
 class WGAN:
@@ -37,6 +36,9 @@ class WGAN:
                 Gradient penalty constant. Only needed if mode == 'wgan-gp'
             n_critic:
                 Number of critic learning iterations per generator iteration
+            log_directory:
+                Directory of tensorboard logs
+
 
         Checkpoints: yet to be added...
         """
@@ -55,7 +57,7 @@ class WGAN:
         self.cat_dims = ()
 
         self.gen_opt, self.crit_opt = self.get_opts()
-
+        self.log_dir = params['log_directory']
         self.temperature = 0.2
 
     def make_generator(self, gen_dim):
@@ -170,20 +172,57 @@ class WGAN:
     def train_ds(self, dataset, epochs, n_data, batch_size=32, cat_dims=(), hard=False, temp_anneal = False):
 
         self.cat_dims = cat_dims
-        temp_increment = self.temperature/epochs
-        # iter_per_epoch =  math.ceil(n_data/batch_size)
+        temp_increment = self.temperature/epochs # for temperature annealing
+        
+        self.g_loss = Mean('generator_loss', dtype = tf.float64)
+        self.c_loss = Mean('critic_loss', dtype = tf.float64)
+        
+        current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        generator_log_dir = self.log_dir+'\\logs\\gradient_tape\\generator'
+        critic_log_dir = self.log_dir+ '\\logs\\gradient_tape\\critic'
+        generator_summary_writer = tf.summary.create_file_writer(generator_log_dir)
+        critic_summary_writer = tf.summary.create_file_writer(critic_log_dir)
+        
+        
+        
+        
         for epoch in range(epochs):
             start = time.time()
             g_loss = 0
             c_loss = 0
             counter = 0
+            #trace = True # Tensorboard tracing, currently not working
             for data_batch in dataset:
+                # if trace:
+                #     tf.summary.trace_on(graph = True, profiler = True)
+                
                 c_loss = self.train_step_c(data_batch, hard)
-
+                
+                # if trace:
+                #     with critic_summary_writer.as_default():
+                #         tf.summary.trace_export(
+                #             name = 'critic_trace', step = 0, profiler_outdir = critic_log_dir
+                #         )             
+                
                 if counter % self.n_critic == 0:
+                    # if trace:
+                    #     tf.summary.trace_on(graph = True, profiler = True)
+                
                     g_loss = self.train_step_g(batch_size, hard)
-                counter += 1
 
+                    # if trace:
+                    #     with generator_summary_writer.as_default():
+                    #         tf.summary.trace_export(
+                    #             'generator_trace', step = 0, profiler_outdir = generator_log_dir
+                    #             )
+                    #     start = False    
+                        
+                counter += 1
+            with critic_summary_writer.as_default():
+                    tf.summary.scalar('loss', self.c_loss.result(), step = epoch)
+                    
+            with generator_summary_writer.as_default():
+                        tf.summary.scalar('loss', self.g_loss.result(), step = epoch)
             if (epoch + 1) % 5 == 0:
                 # checkpoint.save(file_prefix = checkpoint_prefix)
 
@@ -217,6 +256,7 @@ class WGAN:
 
             critic_gradients = crit_tape.gradient(crit_loss, self.critic.trainable_variables)
             self.crit_opt.apply_gradients(zip(critic_gradients, self.critic.trainable_variables))
+            self.c_loss(crit_loss)
         return crit_loss
 
     @tf.function
@@ -240,6 +280,7 @@ class WGAN:
             #     print(s)
             # self.i += 1
             self.gen_opt.apply_gradients(zip(generator_gradients, self.generator.trainable_variables))
+            self.g_loss(gen_loss)
         return gen_loss
 
     def set_temperature(self, temperature):
