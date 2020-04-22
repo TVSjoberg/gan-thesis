@@ -4,7 +4,8 @@ import json
 import shutil
 import numpy as np
 from gan_thesis.data.datagen import *
-from definitions import DATA_DIR, ROOT_DIR, mvn_test1, mvn_test2, mvn_test3, mvn_mix_test1, mvn_mix_test2, ln_test1, ln_test2, cat_test1, cond_cat_test1, gauss_mix_cond_test1
+from definitions import DATA_DIR, ROOT_DIR
+from dataset_spec import *
 from params import mvn_test1_highfeature, mvn_test2_highfeature
 
 
@@ -253,6 +254,12 @@ def load_gauss_cond(pathname, data_params):
     save_data(df, info, pathname)
 
 
+def load_gauss_cond_ext(pathname, data_params):
+    n_samples = data_params.get('n_samples')
+    tind_probs = data_params.get('true_ind_probs')
+    ind_probs = data_params.get('ind_probs')
+    cond_probs = data_params.get('cond_probs')
+
 
 def load_ln(pathname, data_params):
     n_samples = data_params['n_samples']
@@ -331,7 +338,7 @@ def main():
     # load_data('mvn-test2', data_params=mvn_test2)
     # load_data('ln-test1', data_params=ln_test1)
     # load_data('ln-test2', data_params=ln_test2)
-    load_data('credit')
+    load_data('cat_mix_gauss-test2', data_params= gauss_mix_cond_test2)
 
 if __name__ == '__main__':
     main()
