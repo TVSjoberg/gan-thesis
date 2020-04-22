@@ -338,7 +338,11 @@ def main():
     # load_data('mvn-test2', data_params=mvn_test2)
     # load_data('ln-test1', data_params=ln_test1)
     # load_data('ln-test2', data_params=ln_test2)
-    load_data('cat_mix_gauss-test2', data_params= gauss_mix_cond_test2)
+    load_data('cat_mix_gauss-test2', data_params = gauss_mix_cond_test2)
+    load_data('cat_mix_gauss-test3', data_params = gauss_mix_cond_test3)
+    load_data('cond_cat-test2', data_params=cond_cat_test2)
+    load_data('cond_cat-test1', data_params=cond_cat_test1)
+    load_data('ln-test3', data_params=ln_test3)
 
 if __name__ == '__main__':
     main()

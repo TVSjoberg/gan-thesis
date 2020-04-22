@@ -253,7 +253,7 @@ n_labs = n_lab_ind.tolist()+list(chain(*n_lab_cond))
 n_cont_per_cat = [5 for i in (n_labs)]
 
 
-gauss_mix_cond_test2 = {
+gauss_mix_cond_test3 = {
     'n_samples' : 10000,
     'ind_probs' : [
         rand_prop(size).tolist() for size in n_lab_ind
