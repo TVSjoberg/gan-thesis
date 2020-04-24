@@ -59,7 +59,7 @@ def build_and_train(params):
 
 def sampler(my_ctgan, params):
     d = params.get('dataset')
-    samples = my_ctgan.sample(len(d.train))
+    samples = my_ctgan.sample(100000)
     col = d.train.columns
     samples.columns = col
     samples = samples.astype(d.train.dtypes)
@@ -68,15 +68,14 @@ def sampler(my_ctgan, params):
 
 
 def optim_loss(samples, params):
-    ind = 'ind'
     d = params.get('dataset')
-    optim_df = df_concat_ind(real_df=d.train, gen_df=samples, ind=ind)
+    optim_df = add_indicator(real_df=d.train, synth_df=samples)
 
     # one-hot-encode discrete features
     one_hot_df = pd.get_dummies(optim_df, columns=d.info.get('discrete_columns'))
 
     print(one_hot_df.head())
-    loss = pMSE(one_hot_df, ind_var=ind)
+    loss = pMSE(one_hot_df)
     print(loss)
 
     return loss

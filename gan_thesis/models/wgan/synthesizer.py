@@ -76,15 +76,14 @@ def sampler(my_wgan, params):
 
 
 def optim_loss(samples, params):
-    ind = 'ind'
     d = params.get('dataset')
-    optim_df = df_concat_ind(real_df=d.train, gen_df=samples, ind=ind)
+    optim_df = add_indicator(real_df=d.train, synth_df=samples)
 
     # one-hot-encode discrete features
     one_hot_df = pd.get_dummies(optim_df, columns=d.info.get('discrete_columns'))
 
     print(one_hot_df.head())
-    loss = pMSE(one_hot_df, ind_var=ind)
+    loss = pMSE(one_hot_df)
     print(loss)
 
     return loss

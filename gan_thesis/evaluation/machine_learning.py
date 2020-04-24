@@ -44,7 +44,7 @@ def prediction_score(train_x, train_y, test_x, test_y, metric, model, target):
 def predictions_by_dimension(train, test, discrete_columns, continuous_columns):
     features = train.columns.to_list()
     methods = ["random_forest", "adaboost", "regression"] # mlp also available
-    prediction_scores = pd.DataFrame(index=methods, columns=features)
+    prediction_scores = pd.DataFrame(index=features, columns=methods)
 
     for feature_index in range(len(features)):
         # drop target feature
@@ -75,7 +75,7 @@ def predictions_by_dimension(train, test, discrete_columns, continuous_columns):
                     metric="f1", model=method, target='discrete'
                 ))
                 print(temp_scores)
-            prediction_scores.loc[:, features[feature_index]] = temp_scores
+            prediction_scores.loc[features[feature_index], :] = temp_scores
         elif features[feature_index] in continuous_columns:
             temp_scores = []
             for method in methods:
@@ -85,7 +85,7 @@ def predictions_by_dimension(train, test, discrete_columns, continuous_columns):
                     metric="r2", model=method, target='continuous'
                 ))
                 print(temp_scores)
-            prediction_scores.loc[:, features[feature_index]] = temp_scores
+            prediction_scores.loc[features[feature_index], :] = temp_scores
     return prediction_scores
 
 
@@ -100,12 +100,14 @@ def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, co
                                   dataset, model, force=True):
     score_y_by_dimension = predictions_by_dimension(samples, data_test, discrete_columns, continuous_columns)
     score_x_by_dimension = predictions_by_dimension(real, data_test, discrete_columns, continuous_columns)
-    mean_x_by_dimension = score_x_by_dimension.mean(axis=0)
-    mean_y_by_dimension = score_y_by_dimension.mean(axis=0)
+    mean_x_by_dimension = score_x_by_dimension.mean(axis=1)
+    mean_y_by_dimension = score_y_by_dimension.mean(axis=1)
+    col_type = ['Categorical' if (col in discrete_columns) else 'Continuous' for col in mean_x_by_dimension.index]
+    results = pd.DataFrame({'x': mean_x_by_dimension, 'y': mean_y_by_dimension, 'col_type': col_type})
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
-    ax.scatter(mean_x_by_dimension, mean_y_by_dimension)
+    sns.scatterplot(x='x', y='y', ax=ax, hue='col_type', data=results)
     ax.set_title("Machine Learning Efficiency")
     ax.set_ylabel("Sample features")
     ax.set_xlabel("Real features")
@@ -127,7 +129,7 @@ def plot_predictions_by_dimension(real, samples, data_test, discrete_columns, co
     return score_x_by_dimension, score_y_by_dimension
 
 
-def plot_all_predictions_by_dimension(dataset, data, force=True):
+def plot_all_predictions_by_dimension(dataset, data):
 
     real = dataset.train
     data_test = dataset.test
@@ -140,14 +142,20 @@ def plot_all_predictions_by_dimension(dataset, data, force=True):
     models = ['wgan', 'ctgan', 'tgan']
 
     fig, axn = plt.subplots(1, 3, figsize=(20, 6))
+    alist = data.split(sep='-', maxsplit=1)
+    basepath = os.path.join(RESULT_DIR, *alist)
 
     for i in range(3):
         score_y_by_dimension = predictions_by_dimension(samples[i], data_test, discrete_columns, continuous_columns)
         score_x_by_dimension = predictions_by_dimension(real, data_test, discrete_columns, continuous_columns)
-        mean_x_by_dimension = score_x_by_dimension.mean(axis=0)
-        mean_y_by_dimension = score_y_by_dimension.mean(axis=0)
+        mean_x_by_dimension = score_x_by_dimension.mean(axis=1)
+        mean_y_by_dimension = score_y_by_dimension.mean(axis=1)
+        score_x_by_dimension.to_csv(os.path.join(basepath, models[i], '{0}_{1}_ml_real.csv'.format(data, models[i])), index=True)
+        score_y_by_dimension.to_csv(os.path.join(basepath, models[i], '{0}_{1}_ml_samples.csv'.format(data, models[i])), index=True)
+        col_type = ['Categorical' if (col in discrete_columns) else 'Continuous' for col in mean_x_by_dimension.index]
+        results = pd.DataFrame({'x': mean_x_by_dimension, 'y': mean_y_by_dimension, 'col_type': col_type})
         ax = axn[i]
-        sns.scatterplot(mean_x_by_dimension, mean_y_by_dimension, ax=ax)
+        sns.scatterplot(x='x', y='y', ax=ax, hue='col_type', data=results)
         ax.set_title(models[i])
         ax.set_xlim([0, 1])
         ax.set_ylim([0, 1])
@@ -156,17 +164,9 @@ def plot_all_predictions_by_dimension(dataset, data, force=True):
         abline(1, 0, ax)
 
     alist = data.split(sep='-', maxsplit=1)
-    #dataset = alist[0]
-    basepath = os.path.join(RESULT_DIR, alist[0])
+    # dataset = alist[0]
+    basepath = os.path.join(RESULT_DIR, *alist)
     filepath = os.path.join(basepath, '{0}_all_ml_efficiency.png'.format(data))
     if not os.path.exists(basepath):
         os.makedirs(basepath)
-    if os.path.isfile(filepath) and force:
-        # os.remove(filepath)
-        print('foo')
     plt.savefig(filepath)
-
-    #score_x_by_dimension.to_csv(os.path.join(basepath, '{0}_{1}_ml_real.csv'.format(dataset, model)), index=True)
-    #score_y_by_dimension.to_csv(os.path.join(basepath, '{0}_{1}_ml_samples.csv'.format(dataset, model)), index=True)
-
-    #return score_x_by_dimension, score_y_by_dimension
