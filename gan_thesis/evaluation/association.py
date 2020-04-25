@@ -8,6 +8,7 @@ import seaborn as sns
 import os
 from definitions import RESULT_DIR
 from gan_thesis.data.load_data import Dataset
+from gan_thesis.models.general.utils import save_json
 
 
 def association(dataset, split=False):
@@ -100,13 +101,17 @@ def plot_all_association(complete_dataset, dataset, force=True):
     samples_wgan = complete_dataset.samples.get('wgan')
     samples_tgan = complete_dataset.samples.get('tgan')
     samples_ctgan = complete_dataset.samples.get('ctgan')
+    diff = {}
 
     samples_dataset = Dataset(None, None, samples_wgan, complete_dataset.info, None)
     association_wgan = association(samples_dataset)
+    diff['wgan'] = association_difference(association_real, association_wgan)
     samples_dataset = Dataset(None, None, samples_ctgan, complete_dataset.info, None)
     association_ctgan = association(samples_dataset)
+    diff['ctgan'] = association_difference(association_real, association_ctgan)
     samples_dataset = Dataset(None, None, samples_tgan, complete_dataset.info, None)
     association_tgan = association(samples_dataset)
+    diff['tgan'] = association_difference(association_real, association_tgan)
 
     mask = np.triu(np.ones_like(association_real, dtype=np.bool))
 
@@ -178,5 +183,6 @@ def plot_all_association(complete_dataset, dataset, force=True):
     if os.path.isfile(filepath) and force:
         os.remove(filepath)
 
+    save_json(diff, filepath)
     plt.savefig(filepath)
     plt.close()

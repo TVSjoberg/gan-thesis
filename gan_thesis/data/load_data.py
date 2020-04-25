@@ -6,7 +6,7 @@ import numpy as np
 from gan_thesis.data.datagen import *
 from definitions import DATA_DIR, ROOT_DIR
 from dataset_spec import *
-from params import mvn_test1_highfeature, mvn_test2_highfeature
+# from params import mvn_test1_highfeature, mvn_test2_highfeature
 
 
 class Dataset:
