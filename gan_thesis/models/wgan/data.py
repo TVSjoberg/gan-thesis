@@ -61,6 +61,7 @@ class dataScaler:
 
     def transform(self, df_in, cont_cols, cat_cols, fit=True):
         df = df_in.copy()
+        self.original_order = df.columns
 
         if len(cont_cols) != 0:
             df = self.std_scale(df, cont_cols, fit)
@@ -75,7 +76,8 @@ class dataScaler:
             df = self.inv_std_scale(df)
         if self.oht_scaled:
             df = self.inv_oht_transform(df)
-        return df
+        
+        return df[self.original_order]
 
     def oht_transform(self, df_in, cat_cols, fit=True):
         df = df_in.copy()

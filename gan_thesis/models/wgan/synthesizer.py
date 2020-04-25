@@ -7,16 +7,18 @@ from gan_thesis.models.general.utils import save_model, load_model, save_json
 from gan_thesis.models.general.optimization import optimize
 from gan_thesis.models.wgan.wgan import *
 
+import datetime
 import os
 import pandas as pd
 from definitions import RESULT_DIR
 from hyperopt import hp
 
-EPOCHS = 600
+EPOCHS = 100
 
 DEF_PARAMS = {
             'eval': 'all',
             # NN Hyperparameters
+            'EPOCHS' : EPOCHS,
             'embedding_dim': 128,
             'gen_num_layers': 2,
             'gen_layer_sizes': 256,
@@ -51,15 +53,29 @@ def build_and_train(params):
     params['crit_dim'] = crit_layers
     
     params['output_dim'] = d.info.get('dim')
+    epchs = params['EPOCHS']
 
     my_wgan = WGAN(params)
-    print('Fitting a wgan model for {0} epochs...'.format(EPOCHS))
-    my_wgan.train(d.train, EPOCHS, 
-                  d.info.get('discrete_columns'), 
-                  d.info.get('continuous_columns'), 
-                  batch_size=params['batch_size'], 
-                  hard=params['hard'],
-                   temp_anneal = params['temp_anneal'])
+    print('Fitting a wgan model for {0} epochs...'.format(epchs))
+    max_iter = 7 ##Wgan overflows at ~950 epochs
+    curr_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    for i in range(epchs//max_iter):
+        my_wgan.train(d.train, max_iter, 
+                    d.info.get('discrete_columns'), 
+                    d.info.get('continuous_columns'), 
+                    batch_size=params['batch_size'], 
+                    hard=params['hard'],
+                    temp_anneal = params['temp_anneal'], 
+                    input_time=curr_time)
+    my_wgan.train(d.train, epchs%max_iter, 
+                    d.info.get('discrete_columns'), 
+                    d.info.get('continuous_columns'), 
+                    batch_size=params['batch_size'], 
+                    hard=params['hard'],
+                    temp_anneal = params['temp_anneal'], 
+                    input_time=curr_time)
+    
+    
     print('Successfully fitted a wgan model')
 
     return my_wgan
@@ -94,9 +110,10 @@ def main(params=None, optim=False):
     if params is None:
         params = {
             # Regular parameters
-            'training_set': 'mvn-test3',
+            'training_set': 'cat_mix_gauss-test1',
             'eval': 'all',
             # NN Hyperparameters
+            'EPOCHS' : EPOCHS,
             'embedding_dim': 128,
             'gen_num_layers': 2,
             'gen_layer_sizes': 256,
@@ -126,9 +143,10 @@ def main(params=None, optim=False):
     print('Successfully loaded dataset {0}'.format(params.get('training_set')))
 
     alist = params.get('training_set').split(sep='-', maxsplit=1)
+    
     basepath = os.path.join(RESULT_DIR, *alist, params.get('model'))
     filepath = os.path.join(basepath, '{0}_{1}_ass_diff.json'.format(alist[0], params.get('model')))
-    params['log_directory'] = basepath#.replace('\\', '/')
+    params['log_directory'] = basepath
     
     
     if optim:
@@ -147,12 +165,12 @@ def main(params=None, optim=False):
         filename = os.path.join(RESULT_DIR, params.get('training_set'), params.get('model'))
 
         my_wgan = build_and_train(params=params)
-        try:
-            save_model(my_wgan, filename, force = True)
-            print('Saved the wgan model at {0}'.format(filename))
-        except Exception as e:
-            print('Model was not saved due to an error: {0}'.format(e))
-            #os.remove(filename)
+        # try:
+        #     save_model(my_wgan, filename, force = True)
+        #     print('Saved the wgan model at {0}'.format(filename))
+        # except Exception as e:
+        #     print('Model was not saved due to an error: {0}'.format(e))
+        #     #os.remove(filename)
             
         #save_model(my_wgan, filename, force=True)
         #print('Saved the wgan model at {0}'.format(filename))
