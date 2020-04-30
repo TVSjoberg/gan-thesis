@@ -42,7 +42,8 @@ class WGAN:
 
         Checkpoints: yet to be added...
         """
-
+        
+        self.epoch_trained = 0
         self.output_dim = params['output_dim']
         self.latent_dim = params['embedding_dim']
         self.mode = params['mode']
@@ -145,7 +146,7 @@ class WGAN:
 
 
 
-    def train(self, dataframe, epochs, cat_cols=None, cont_cols=None, hard=False, temp_anneal = False ,batch_size=32, shuffle=True):
+    def train(self, dataframe, epochs, cat_cols=None, cont_cols=None, hard=False, temp_anneal = False , batch_size=32, shuffle=True, input_time = False):
         
         
         if cont_cols is None:
@@ -167,9 +168,11 @@ class WGAN:
         df = df.astype('float32')
         self.oht_shuff_cols = list(df.columns)
         dataset = df_to_dataset(df, shuffle, batch_size)
-        self.train_ds(dataset, epochs, len(df), batch_size, self.cat_dims, hard, temp_anneal)
+        self.train_ds(dataset, epochs, len(df), batch_size, self.cat_dims, hard, temp_anneal, input_time)
+        self.epoch_trained += epochs
+        
 
-    def train_ds(self, dataset, epochs, n_data, batch_size=32, cat_dims=(), hard=False, temp_anneal = False):
+    def train_ds(self, dataset, epochs, n_data, batch_size=32, cat_dims=(), hard=False, temp_anneal = False, input_time = False):
 
         self.cat_dims = cat_dims
         temp_increment = self.temperature/epochs # for temperature annealing
@@ -177,16 +180,15 @@ class WGAN:
         self.g_loss = Mean('generator_loss', dtype = tf.float64)
         self.c_loss = Mean('critic_loss', dtype = tf.float64)
         
-        current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        generator_log_dir = self.log_dir+'\\logs\\gradient_tape\\generator'
-        critic_log_dir = self.log_dir+ '\\logs\\gradient_tape\\critic'
+        
+        current_time = input_time if input_time else datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        generator_log_dir = self.log_dir+'\\logs\\'+current_time+'\\gradient_tape\\generator'
+        critic_log_dir = self.log_dir+ '\\logs\\'+current_time+'\\gradient_tape\\critic'
         generator_summary_writer = tf.summary.create_file_writer(generator_log_dir)
         critic_summary_writer = tf.summary.create_file_writer(critic_log_dir)
         
         
-        
-        
-        for epoch in range(epochs):
+        for epoch in range(self.epoch_trained,self.epoch_trained+epochs):
             start = time.time()
             g_loss = 0
             c_loss = 0
@@ -219,13 +221,13 @@ class WGAN:
                         
                 counter += 1
             with critic_summary_writer.as_default():
-                    tf.summary.scalar('loss', self.c_loss.result(), step = epoch)
+                    tf.summary.scalar('loss', c_loss, step = epoch)
                     
             with generator_summary_writer.as_default():
-                        tf.summary.scalar('loss', self.g_loss.result(), step = epoch)
+                        tf.summary.scalar('loss', g_loss, step = epoch)
             if (epoch + 1) % 5 == 0:
-                # checkpoint.save(file_prefix = checkpoint_prefix)
-
+                # Checkpooint functionality here      
+                
                 print('Time for epoch {} is {} sec \n with critic loss: {} and generator loss {}'.format(epoch + 1,
                                                                                                           time.time() - start, 
                                                                                                             c_loss, g_loss))
@@ -250,11 +252,13 @@ class WGAN:
             fake_output = self.critic(fake_data, training=True)
 
             crit_loss = critic_loss(real_output, fake_output)
+            
             if self.mode == 'wgan-gp':
                 gp_loss = self.gp_const * gradient_penalty(partial(self.critic), data_batch, fake_data)
+                
                 crit_loss += gp_loss
 
-            critic_gradients = crit_tape.gradient(crit_loss, self.critic.trainable_variables)
+            critic_gradients = crit_tape.gradient(crit_loss , self.critic.trainable_variables)
             self.crit_opt.apply_gradients(zip(critic_gradients, self.critic.trainable_variables))
             self.c_loss(crit_loss)
         return crit_loss
@@ -271,14 +275,8 @@ class WGAN:
 
             fake_output = self.critic(fake_data, training=True)
             gen_loss = generator_loss(fake_output)
-            #print(gen_loss)
             generator_gradients = gen_tape.gradient(gen_loss, self.generator.trainable_variables)
-            # if self.i >1:
-            #     s = 0
-            #     for i in range(len(generator_gradients)):
-            #         s += np.sum(generator_gradients[i])
-            #     print(s)
-            # self.i += 1
+
             self.gen_opt.apply_gradients(zip(generator_gradients, self.generator.trainable_variables))
             self.g_loss(gen_loss)
         return gen_loss

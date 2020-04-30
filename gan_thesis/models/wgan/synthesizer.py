@@ -4,16 +4,16 @@ from gan_thesis.evaluation.association import plot_association
 from gan_thesis.evaluation.pMSE import *
 from gan_thesis.data.load_data import *
 from gan_thesis.models.general.utils import save_model, load_model, save_json
-from gan_thesis.models.general.optimization import optimize
+#from gan_thesis.models.general.optimization import optimize
 from gan_thesis.models.wgan.wgan import *
 
 import datetime
 import os
 import pandas as pd
 from definitions import RESULT_DIR
-from hyperopt import hp
+#from hyperopt import hp
 
-EPOCHS = 100
+EPOCHS = 300
 
 DEF_PARAMS = {
             'eval': 'all',
@@ -33,15 +33,15 @@ DEF_PARAMS = {
         }
 
 # HYPEROPT SPACE
-space = {
-    'embedding_dim': 2 ** hp.quniform('embedding_dim', 4, 9, 1),
-    'gen_num_layers': hp.quniform('gen_num_layers', 1, 5, 1),
-    'gen_layer_sizes': 2 ** hp.quniform('gen_layer_sizes', 4, 9, 1),
-    'crit_num_layers': hp.quniform('crit_num_layers', 1, 5, 1),
-    'crit_layer_sizes': 2 ** hp.quniform('crit_layer_sizes', 4, 9, 1),
-    'l2scale': hp.loguniform('l2scale', np.log10(10 ** -6), np.log10(0.2)),
-    'batch_size': 50 * hp.quniform('batch_size', 1, 50, 1)
-}
+# space = {
+#     'embedding_dim': 2 ** hp.quniform('embedding_dim', 4, 9, 1),
+#     'gen_num_layers': hp.quniform('gen_num_layers', 1, 5, 1),
+#     'gen_layer_sizes': 2 ** hp.quniform('gen_layer_sizes', 4, 9, 1),
+#     'crit_num_layers': hp.quniform('crit_num_layers', 1, 5, 1),
+#     'crit_layer_sizes': 2 ** hp.quniform('crit_layer_sizes', 4, 9, 1),
+#     'l2scale': hp.loguniform('l2scale', np.log10(10 ** -6), np.log10(0.2)),
+#     'batch_size': 50 * hp.quniform('batch_size', 1, 50, 1)
+# }
 
 
 def build_and_train(params):
@@ -145,8 +145,10 @@ def main(params=None, optim=False):
     
     basepath = os.path.join(RESULT_DIR, *alist, params.get('model'))
     filepath = os.path.join(basepath, '{0}_{1}_ass_diff.json'.format(alist[0], params.get('model')))
-    params['log_directory'] = basepath
-    
+    if params.get('log_directory') != None:
+        params['log_directory'] = os.path.join(basepath,params['log_directory'])
+    else:
+        params['log_directory'] = basepath
     
     if optim:
         # Optimize or load wgan model
@@ -185,8 +187,8 @@ def main(params=None, optim=False):
         print('Starting MLE evaluation on samples...')
         discrete_columns, continuous_columns = dataset.get_columns()
         plot_predictions_by_dimension(real=dataset.train, samples=samples, data_test=dataset.test,
-                                      discrete_columns=discrete_columns, continuous_columns=continuous_columns,
-                                      dataset=params.get('training_set'), model='wgan')
+                                       discrete_columns=discrete_columns, continuous_columns=continuous_columns,
+                                       dataset=params.get('training_set'), model='wgan')
         print('Plotting marginals of real and sample data...')
         plot_marginals(dataset.train, samples, params.get('training_set'), 'wgan')
         print('Plotting association matrices...')
