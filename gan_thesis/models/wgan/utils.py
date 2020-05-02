@@ -68,11 +68,11 @@ def wasserstein_loss(y_real, y_critic):
 
 
 def critic_loss(real_output, fake_output):
-    real_loss = wasserstein_loss(real_output, -tf.ones_like(real_output))
-    fake_loss = wasserstein_loss(fake_output, tf.ones_like(fake_output))
+    real_loss = wasserstein_loss(real_output, tf.ones_like(real_output))
+    fake_loss = wasserstein_loss(fake_output, -tf.ones_like(fake_output))
     total_loss = real_loss + fake_loss
     return total_loss
 
 
 def generator_loss(fake_output):
-    return wasserstein_loss(-tf.ones_like(fake_output), fake_output)
+    return wasserstein_loss(tf.ones_like(fake_output), fake_output)
