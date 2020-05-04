@@ -58,7 +58,7 @@ def load_data(dataset, data_params=None):
 
 
 def load_adult(dirname, *args):
-    n_test = 9600  # Same as CTGAN paper
+    n_test = 10000  # Same as CTGAN paper
     info = {
         "columns": ['age',
                     'workclass',
@@ -97,8 +97,8 @@ def load_adult(dirname, *args):
     cc = info.get('columns')
     df = pd.read_csv(os.path.join(ROOT_DIR, 'adult.csv'), usecols=cc, header=0)
 
-    #df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',
-                    #usecols=cc, header=0)
+    # df = pd.read_csv('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',
+    #                 names=cc, header=0)
     df = df.sample(frac=1).reset_index(drop=True)
     train, test = train_test_split(df=df, n_test=n_test)
     df.to_csv(os.path.join(dirname, 'data.csv'), index=False)
@@ -107,6 +107,90 @@ def load_adult(dirname, *args):
 
     with open(os.path.join(dirname, 'info.json'), "w") as write_file:
         json.dump(info, write_file)
+
+
+def load_news(dirname, *args):
+    n_test = 8000  # Same as CTGAN paper
+    info = {
+        "n_test": n_test,
+        "identifier": 'news'
+    }
+
+    df = pd.read_csv(os.path.join(ROOT_DIR, 'news.csv'), sep=',', header=0)
+    print(df.columns.to_list()[1])
+
+    df = df.drop('url', axis=1)
+    df = df.drop(' timedelta', axis=1)
+
+    cc = df.columns.to_list()
+    info['columns'] = cc
+    info['discrete_columns'] = cc[11:17] + cc[29:37]
+    info['continuous_columns'] = cc[:11] + cc[17:29] + cc[37:]
+    print(info['discrete_columns'])
+    print(info['continuous_columns'])
+
+    df = df.sample(frac=1).reset_index(drop=True)
+    train, test = train_test_split(df=df, n_test=n_test)
+    df.to_csv(os.path.join(dirname, 'data.csv'), index=False)
+    train.to_csv(os.path.join(dirname, 'train.csv'), index=False)
+    test.to_csv(os.path.join(dirname, 'test.csv'), index=False)
+
+    with open(os.path.join(dirname, 'info.json'), "w") as write_file:
+        json.dump(info, write_file)
+
+
+def load_bank(dirname, *args):
+    n_test = 10000  # Same as CTGAN paper
+    info = {
+        "n_test": n_test,
+        "identifier": 'bank'
+    }
+
+    df = pd.read_csv(os.path.join(ROOT_DIR, 'bank.csv'), sep=';', header=0)
+
+    cc = df.columns.to_list()
+    info['columns'] = cc
+    info['discrete_columns'] = cc[1:10] + [cc[14]] + [cc[20]]
+    info['continuous_columns'] = [cc[0]] + cc[10:14] + cc[15:20]
+    print(info['discrete_columns'])
+    print(info['continuous_columns'])
+
+    df = df.sample(frac=1).reset_index(drop=True)
+    train, test = train_test_split(df=df, n_test=n_test)
+    df.to_csv(os.path.join(dirname, 'data.csv'), index=False)
+    train.to_csv(os.path.join(dirname, 'train.csv'), index=False)
+    test.to_csv(os.path.join(dirname, 'test.csv'), index=False)
+
+    with open(os.path.join(dirname, 'info.json'), "w") as write_file:
+        json.dump(info, write_file)
+
+
+def load_telecom(dirname, *args):
+    n_test = 2000
+    info = {
+        "n_test": n_test,
+        "identifier": 'telecom'
+    }
+
+    df = pd.read_csv(os.path.join(ROOT_DIR, 'telecom.csv'), sep=',', header=0)
+    df = df.drop('customerID', axis=1)
+
+    cc = df.columns.to_list()
+    info['columns'] = cc
+    info['discrete_columns'] = cc[0:4] + cc[5:17] + [cc[19]]
+    info['continuous_columns'] = [cc[4]] + cc[17:19]
+    print(info['discrete_columns'])
+    print(info['continuous_columns'])
+
+    df = df.sample(frac=1).reset_index(drop=True)
+    train, test = train_test_split(df=df, n_test=n_test)
+    df.to_csv(os.path.join(dirname, 'data.csv'), index=False)
+    train.to_csv(os.path.join(dirname, 'train.csv'), index=False)
+    test.to_csv(os.path.join(dirname, 'test.csv'), index=False)
+
+    with open(os.path.join(dirname, 'info.json'), "w") as write_file:
+        json.dump(info, write_file)
+
 
 def load_credit(dirname, *args):
     n_test = 29000  # Same as CTGAN paper
@@ -314,6 +398,9 @@ def save_samples(df, dataset, model, force=True):
 
 load_wrapper = {
     'adult': load_adult,
+    'news': load_news,
+    'telecom': load_telecom,
+    'bank': load_bank,
     'credit': load_credit,
     'mvn': load_mvn,
     'mvn_mixture': load_mvn_mixture,
@@ -328,21 +415,9 @@ load_wrapper = {
 
 def main():
 
-    load_data('cat_mix_gauss-test1', data_params = gauss_mix_cond_test1)
-    load_data('cond_cat-test1', data_params = cond_cat_test1)
-    load_data('cat-test1', data_params = cat_test1)
-    load_data('mvn-test3', data_params=mvn_test3)
-    load_data('mvn_mixture-test1', data_params = mvn_mix_test1)
-    load_data('mvn_mixture-test2', data_params = mvn_mix_test2)
-    load_data('mvn-test1', data_params=mvn_test1)
-    load_data('mvn-test2', data_params=mvn_test2)
-    load_data('ln-test1', data_params=ln_test1)
-    load_data('ln-test2', data_params=ln_test2)
-    load_data('cat_mix_gauss-test2', data_params = gauss_mix_cond_test2)
-    load_data('cat_mix_gauss-test3', data_params = gauss_mix_cond_test3)
-    load_data('cond_cat-test2', data_params=cond_cat_test2)
-    load_data('cond_cat-test1', data_params=cond_cat_test1)
-    load_data('ln-test3', data_params=ln_test3)
+    load_data('news')
+    # load_data('telecom')
+    # load_data('bank')
 
 if __name__ == '__main__':
     main()
