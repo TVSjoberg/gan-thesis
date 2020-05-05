@@ -88,22 +88,29 @@ def countour_2d_plt(x, y, nbins = 50, contour = True):
     return (xi, yi, zi)
 
 
-
-def plot_all_marginals(dataset, data, force=True):
+def plot_all_marginals(dataset, data, force=True, pass_tgan=True):
     real = dataset.train
-    data_test = dataset.test
-    discrete_columns, continuous_columns = dataset.get_columns()
     cols = real.columns
 
+    alist = data.split(sep='-', maxsplit=1)
+    base_path = os.path.join(RESULT_DIR, *alist)
+    if not os.path.exists(base_path):
+        os.makedirs(base_path)
+
     samples_wgan = dataset.samples.get('wgan')
-    samples_tgan = dataset.samples.get('tgan')
     samples_ctgan = dataset.samples.get('ctgan')
-    samples = [samples_wgan, samples_ctgan, samples_tgan]
-    models = ['wgan', 'ctgan', 'tgan']
+    if pass_tgan:
+        samples_tgan = dataset.samples.get('tgan')
+        samples = [samples_wgan, samples_ctgan, samples_tgan]
+        models = ['WGAN', 'CTGAN', 'TGAN']
+    else:
+        samples = [samples_wgan, samples_ctgan]
+        models = ['WGAN', 'CTGAN']
 
     i_cont = real.columns.get_indexer(real.select_dtypes(np.number).columns)
     i_cat = [i for i in range(len(cols)) if i not in i_cont]
 
+    # Plot a picture of all continuous columns in a (,3) grid with all models combined
     j = 0
     cols = 3
     rows = np.ceil(len(i_cont) / cols)
@@ -112,51 +119,93 @@ def plot_all_marginals(dataset, data, force=True):
         j += 1
         plt.subplot(rows, cols, j)
         sns.distplot(real.iloc[:, i], label="Real")
-        sns.distplot(samples[0].iloc[:, i], label=models[0])
-        sns.distplot(samples[1].iloc[:, i], label=models[1])
-        sns.distplot(samples[2].iloc[:, i], label=models[2])
+        for k in range(len(samples)):
+            sns.distplot(samples[k].iloc[:, i], label=models[k])
         plt.legend()
 
-    alist = data.split(sep='-', maxsplit=1)
-    basepath = os.path.join(RESULT_DIR)
-    filepath = os.path.join(basepath, '{0}_all_c_marginals.png'.format(data))
-    if not os.path.exists(basepath):
-        os.makedirs(basepath)
-    if os.path.isfile(filepath) and force:
-        os.remove(filepath)
-    plt.savefig(filepath)
+    file_path = os.path.join(base_path, '{0}_combined_c_marginals.png'.format(data))
+    plt.savefig(file_path)
+
+    # Plot a picture of all continuous columns in a (,3) grid with all models combined
+    j = 0
+    cols = 3
+    rows = np.ceil((len(i_cont) / cols)*len(models))
+    plt.figure(figsize=(15, 10))
+    for k in range(len(models)):
+        for i in i_cont:
+            j += 1
+            plt.subplot(rows, cols, j)
+            sns.distplot(real.iloc[:, i], label="Real")
+            sns.distplot(samples[k].iloc[:, i], label=models[k])
+            plt.legend()
+
+    file_path = os.path.join(base_path, '{0}_separated_c_marginals.png'.format(data))
+    plt.savefig(file_path)
 
     temp = real.copy()
     wgan = samples_wgan.copy()
-    tgan = samples_tgan.copy()
     ctgan = samples_ctgan.copy()
-    listofzeros = ['Real'] * len(real)
-    listofones = ['WGAN'] * len(wgan)
-    listoftwos = ['CTGAN'] * len(ctgan)
-    listofthrees = ['TGAN'] * len(tgan)
-    temp['Synthetic'] = listofzeros
-    wgan['Synthetic'] = listofones
-    ctgan['Synthetic'] = listoftwos
-    tgan['Synthetic'] = listofthrees
-    frames = [temp, wgan, tgan, ctgan]
-    result = pd.concat(frames)
+
+    identifier = ['Real'] * len(temp)
+    temp['Synthetic'] = identifier
+    identifier = ['WGAN'] * len(wgan)
+    wgan['Synthetic'] = identifier
+    identifier = ['CTGAN'] * len(ctgan)
+    ctgan['Synthetic'] = identifier
+
+    if pass_tgan:
+        tgan = samples_tgan.copy()
+        identifier = ['TGAN'] * len(tgan)
+        tgan['Synthetic'] = identifier
+        frames = [temp, wgan, tgan, ctgan]
+        result = pd.concat(frames)
+    else:
+        frames = [temp, wgan, ctgan]
+        result = pd.concat(frames)
 
     j = 0
     cols = 3
-    rows = np.ceil(len(i_cat) / cols)
-    plt.figure(figsize=(15, 10))
+    rows = int(np.ceil(len(i_cat) / cols))
+    f, axes = plt.subplots(rows, cols, figsize=(15, 10))
+    axes = axes.flatten()
     for i in i_cat:
-        j += 1
-        plt.subplot(rows, cols, j)
-        sns.countplot(x=real.columns.tolist()[i], data=result, hue='Synthetic')
-        plt.legend()
+        temp = result[result['Synthetic'] == 'Real'].iloc[:, i]
+        vals = temp.value_counts(normalize=True)
+        id = ['Real'] * len(vals)
+        vals_id = list(zip(vals.index, vals, id))
+        rel_counts = pd.DataFrame(vals_id, columns=['Feature', 'Frequency', 'Model'])
 
-    filepath = os.path.join(basepath, '{0}_all_d_marginals.png'.format(data))
-    if not os.path.exists(basepath):
-        os.makedirs(basepath)
+        for model in models:
+            temp = result[result['Synthetic'] == model].iloc[:, i]
+            vals = temp.value_counts(normalize=True)
+            id = [model]*len(vals)
+            vals_id = list(zip(vals.index, vals, id))
+            rel_counts = rel_counts.append(pd.DataFrame(vals_id, columns=['Feature', 'Frequency', 'Model']), ignore_index=True)
+
+        sns.barplot(x='Feature', y='Frequency', hue='Model', data=rel_counts, ax=axes[j])
+
+        # (result
+        #  .groupby(x)[y]
+        #  .value_counts(normalize=True)
+        #  .mul(100)
+        #  .rename('percent')
+        #  .reset_index()
+        #  .pipe((sns.catplot, 'data'), x=x, y='percent', hue=y, kind='bar', ax=axes[j]))
+        # sns.countplot(x=real.columns.tolist()[i], data=result, hue='Synthetic', ax=axes[j])
+        if (j-1) % 3 == 0:
+            axes[j].legend(loc='upper center', bbox_to_anchor=(0.5, 1.05),
+                      ncol=4, fancybox=True, shadow=True)
+        else:
+            axes[j].get_legend().remove()
+        j += 1
+
+    filepath = os.path.join(base_path, '{0}_all_d_marginals.png'.format(data))
+    if not os.path.exists(base_path):
+        os.makedirs(base_path)
     if os.path.isfile(filepath) and force:
         os.remove(filepath)
     plt.savefig(filepath)
+    print(['saved figure at',filepath])
 
 
 def plot_cond_marginals():
