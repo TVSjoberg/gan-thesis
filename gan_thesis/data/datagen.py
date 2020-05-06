@@ -117,7 +117,8 @@ def cat_mixture_gauss(cond_df, cond_info, means, varis, corrs, seed = False):
             df = pd.concat((df, temp_df))
             df = df.reset_index(drop = True)
             info['mixture info']['Cat_feature_{0} label_{1}'.format(str(i),str(j))] = temp_info
-            
+        
+        cond_df = cond_df.sort_values(cond_df.columns[i]).reset_index(drop=True)    
         cond_df = pd.concat((cond_df, df), axis = 1)
         
     info['dim'] = dim_count
