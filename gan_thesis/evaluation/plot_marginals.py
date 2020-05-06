@@ -108,37 +108,50 @@ def plot_all_marginals(dataset, data, force=True, pass_tgan=True):
         models = ['WGAN', 'CTGAN']
 
     i_cont = real.columns.get_indexer(real.select_dtypes(np.number).columns)
+    if data == 'telecom':
+        i_cont = np.delete(i_cont, 0)
     i_cat = [i for i in range(len(cols)) if i not in i_cont]
 
     # Plot a picture of all continuous columns in a (,3) grid with all models combined
     j = 0
     cols = 3
+    if data == 'news':
+        cols = 5
     rows = np.ceil(len(i_cont) / cols)
-    plt.figure(figsize=(15, 10))
+    plt.figure(figsize=(12, 3*rows))
     for i in i_cont:
         j += 1
         plt.subplot(rows, cols, j)
         sns.distplot(real.iloc[:, i], label="Real")
         for k in range(len(samples)):
             sns.distplot(samples[k].iloc[:, i], label=models[k])
-        plt.legend()
+        if j == 2:
+            plt.legend(loc='lower center', bbox_to_anchor=(0.5, 1),
+                       ncol=4, fancybox=True, shadow=False)
+        else:
+            plt.legend('', frameon=False)
 
     file_path = os.path.join(base_path, '{0}_combined_c_marginals.png'.format(data))
     plt.savefig(file_path)
 
-    # Plot a picture of all continuous columns in a (,3) grid with all models combined
+    # Plot a picture of all continuous columns in a (,3) grid with all models separated
     j = 0
     cols = 3
     rows = np.ceil((len(i_cont) / cols)*len(models))
-    plt.figure(figsize=(15, 10))
+    plt.figure(figsize=(4*cols, 3*rows))
+    current_palette = sns.color_palette()
     for k in range(len(models)):
+        leg = True
         for i in i_cont:
             j += 1
             plt.subplot(rows, cols, j)
-            sns.distplot(real.iloc[:, i], label="Real")
-            sns.distplot(samples[k].iloc[:, i], label=models[k])
-            plt.legend()
-
+            sns.distplot(real.iloc[:, i], label="Real", color=current_palette[0])
+            sns.distplot(samples[k].iloc[:, i], label=models[k], color=current_palette[k+1])
+            plt.legend('', frameon=False)
+            if leg:
+                plt.legend(loc='upper right', bbox_to_anchor=(1, 1),
+                            ncol=4, fancybox=True, shadow=False)
+                leg = False
     file_path = os.path.join(base_path, '{0}_separated_c_marginals.png'.format(data))
     plt.savefig(file_path)
 
@@ -166,9 +179,11 @@ def plot_all_marginals(dataset, data, force=True, pass_tgan=True):
     j = 0
     cols = 3
     rows = int(np.ceil(len(i_cat) / cols))
-    f, axes = plt.subplots(rows, cols, figsize=(15, 10))
-    axes = axes.flatten()
+    if rows == 0:
+        rows = 1
+    plt.figure(figsize=(12, 3*rows))
     for i in i_cat:
+        j += 1
         temp = result[result['Synthetic'] == 'Real'].iloc[:, i]
         vals = temp.value_counts(normalize=True)
         id = ['Real'] * len(vals)
@@ -182,7 +197,9 @@ def plot_all_marginals(dataset, data, force=True, pass_tgan=True):
             vals_id = list(zip(vals.index, vals, id))
             rel_counts = rel_counts.append(pd.DataFrame(vals_id, columns=['Feature', 'Frequency', 'Model']), ignore_index=True)
 
-        sns.barplot(x='Feature', y='Frequency', hue='Model', data=rel_counts, ax=axes[j])
+        plt.subplot(rows, cols, j)
+        sns.barplot(x='Feature', y='Frequency', hue='Model', data=rel_counts)
+        plt.xlabel(result.columns.to_list()[i])
 
         # (result
         #  .groupby(x)[y]
@@ -192,12 +209,13 @@ def plot_all_marginals(dataset, data, force=True, pass_tgan=True):
         #  .reset_index()
         #  .pipe((sns.catplot, 'data'), x=x, y='percent', hue=y, kind='bar', ax=axes[j]))
         # sns.countplot(x=real.columns.tolist()[i], data=result, hue='Synthetic', ax=axes[j])
-        if (j-1) % 3 == 0:
-            axes[j].legend(loc='upper center', bbox_to_anchor=(0.5, 1.05),
-                      ncol=4, fancybox=True, shadow=True)
+        if j == 2:
+            plt.legend(loc='lower center', bbox_to_anchor=(0.5, 1),
+                      ncol=4, fancybox=True, shadow=False)
         else:
-            axes[j].get_legend().remove()
-        j += 1
+            plt.legend('', frameon=False)
+    plt.tight_layout()
+
 
     filepath = os.path.join(base_path, '{0}_all_d_marginals.png'.format(data))
     if not os.path.exists(base_path):

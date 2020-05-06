@@ -136,16 +136,22 @@ def plot_all_predictions_by_dimension(dataset, data):
     discrete_columns, continuous_columns = dataset.get_columns()
 
     samples_wgan = dataset.samples.get('wgan')
-    samples_tgan = dataset.samples.get('tgan')
+    # samples_tgan = dataset.samples.get('tgan')
     samples_ctgan = dataset.samples.get('ctgan')
-    samples = [samples_wgan, samples_ctgan, samples_tgan]
-    models = ['wgan', 'ctgan', 'tgan']
+    # samples = [samples_wgan, samples_ctgan, samples_tgan]
+    samples = [samples_wgan, samples_ctgan]
+    # models = ['wgan', 'ctgan', 'tgan']
+    models = ['wgan', 'ctgan']
 
-    fig, axn = plt.subplots(1, 3, figsize=(20, 6))
+    # fig, axn = plt.subplots(1, 3, figsize=(20, 6))
+    fig, axn = plt.subplots(1, 2, figsize=(20, 6))
     alist = data.split(sep='-', maxsplit=1)
     basepath = os.path.join(RESULT_DIR, *alist)
+    for model in models:
+        if not os.path.exists(os.path.join(basepath, model)):
+            os.makedirs(os.path.join(basepath, model))
 
-    for i in range(3):
+    for i in range(len(models)):
         score_y_by_dimension = predictions_by_dimension(samples[i], data_test, discrete_columns, continuous_columns)
         score_x_by_dimension = predictions_by_dimension(real, data_test, discrete_columns, continuous_columns)
         mean_x_by_dimension = score_x_by_dimension.mean(axis=1)

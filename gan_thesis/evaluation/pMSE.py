@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import PolynomialFeatures
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from gan_thesis.evaluation.machine_learning import *
 from gan_thesis.data.load_data import load_data
@@ -14,14 +15,21 @@ MODELS = {'logreg': LogisticRegression(penalty='none', max_iter=100),
 MODELS = {'logreg': LogisticRegression(max_iter=100)}
 
 
-def pMSE_ratio(real_df, synth_df):
+def pMSE_ratio(real_df, synth_df, discrete_columns):
+    # Extract all discrete features, first line ensures that get all features from both real and synth
+    features = real_df.columns.to_list() + list(set(synth_df.columns.to_list()) - set(real_df.columns.to_list()))
+    discrete_used_feature_indices = [feature for feature in features if feature in discrete_columns]
+
+    one_hot_real = pd.get_dummies(real_df, columns=discrete_used_feature_indices)
+    one_hot_synth = pd.get_dummies(synth_df, columns=discrete_used_feature_indices)
 
     ratio = {}
     for model in MODELS:
-        pmse = pMSE(real_df, synth_df, MODELS[model])
-        if model != 'logreg':
-            N = len(real_df) + len(synth_df)
-            null = (len(pd.get_dummies(real_df).columns.tolist())) * (1 - len(synth_df)/N)**2 * len(synth_df)/(N**2)
+        pmse, k = pMSE(one_hot_real, one_hot_synth, MODELS[model])
+        if model == 'logreg':
+            N = len(real_df.index) + len(synth_df.index)
+            c = len(synth_df.index)/N
+            null = (k-1) * (1-c)**2 * (c/N)
         else:
             null = null_pmse(model)
         ratio[model] = pmse/null
@@ -33,19 +41,25 @@ def pMSE_ratio(real_df, synth_df):
     return ratio
 
 
-def pMSE(real_df, synth_df, model, shuffle=False):
+def pMSE(real_df, synth_df, model, shuffle=False, polynomials=True):
     # This should be implemented with multiple models chosen by some variable
     # For now it will be done with logistic regression as there is an analytical solutionn to the null value.
     # ind_var is the name of the indicator variable
 
     df = add_indicator(real_df, synth_df, shuffle)
+    predictors = df.iloc[:, :-1]
+    target = df.iloc[:, -1]
 
-    model.fit(df.iloc[:, :-1], df.iloc[:, -1])
-    prediction = model.predict_proba(df.iloc[:, :-1])
-    c = len(synth_df) / len(df)
-    pmse = sum((prediction[:, 1] - c) ** 2) / len(df)
+    if polynomials:
+        poly = PolynomialFeatures(degree=2)
+        poly.fit_transform(predictors)
 
-    return pmse
+    model.fit(predictors, target)
+    prediction = model.predict_proba(predictors)
+    c = len(synth_df.index) / len(df.index)
+    pmse = sum((prediction[:, 1] - c) ** 2) / len(df.index)
+
+    return pmse, model.coef_.size
 
 
 def null_pmse_est(real_df, synth_df, n_iter):
