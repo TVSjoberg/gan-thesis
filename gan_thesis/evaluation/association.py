@@ -1,4 +1,4 @@
-from sklearn.metrics import mutual_info_score
+from sklearn.metrics import mutual_info_score, normalized_mutual_info_score
 from scipy.stats import spearmanr, pearsonr
 from scipy.spatial.distance import euclidean
 import pandas as pd
@@ -23,7 +23,7 @@ def association(dataset, split=False):
             if (columns[i] in continuous_columns) and (columns[j] in continuous_columns):
                 association_matrix[i, j] = pearsonr(data.iloc[:, i], data.iloc[:, j])[0]
             if (columns[i] in discrete_columns) and (columns[j] in discrete_columns):
-                association_matrix[i, j] = mutual_info_score(data.iloc[:, i], data.iloc[:, j])
+                association_matrix[i, j] = normalized_mutual_info_score(data.iloc[:, i], data.iloc[:, j])
             if (columns[i] in continuous_columns) and (columns[j] in discrete_columns):
                 association_matrix[i, j] = mutual_info_score_binned(data.iloc[:, i], data.iloc[:, j],
                                                                     bin_axis=[True, False])
@@ -34,13 +34,13 @@ def association(dataset, split=False):
     return pd.DataFrame(association_matrix, index=columns, columns=columns)
 
 
-def mutual_info_score_binned(x, y, bin_axis=None, bins=10):
+def mutual_info_score_binned(x, y, bin_axis=None, bins=100):
     if bin_axis is None:
         bin_axis = [True, False]  # Bin x, don't bin y
 
     x = pd.cut(x, bins=bins) if bin_axis[0] else x
     y = pd.cut(y, bins=bins) if bin_axis[1] else y
-    return mutual_info_score(x, y)
+    return normalized_mutual_info_score(x, y)
 
 
 def association_difference(real=None, samples=None, association_real=None, association_samples=None):
@@ -95,34 +95,75 @@ def plot_association(real_dataset, samples, dataset, model, force=True):
     return association_difference(association_real=association_real, association_samples=association_samples)
 
 
-def plot_all_association(complete_dataset, dataset, force=True):
-    association_real = association(complete_dataset)
+def plot_all_association(complete_dataset, dataset, force=True, pass_tgan=True):
+    alist = dataset.split(sep='-', maxsplit=1)
+    base_path = os.path.join(RESULT_DIR, *alist)
+    if not os.path.exists(base_path):
+        os.makedirs(base_path)
 
-    samples_wgan = complete_dataset.samples.get('wgan')
-    samples_tgan = complete_dataset.samples.get('tgan')
-    samples_ctgan = complete_dataset.samples.get('ctgan')
+    file_path = os.path.join(base_path, 'real_{0}_association.csv'.format(dataset))
+    if os.path.exists(file_path):
+        association_real = pd.read_csv(file_path)
+        association_real = association_real.iloc[:, 1:]
+        association_real = association_real.set_index(association_real.columns)
+    else:
+        association_real = association(complete_dataset)
+        association_real.to_csv(file_path)
+
     diff = {}
 
-    samples_dataset = Dataset(None, None, samples_wgan, complete_dataset.info, None)
-    association_wgan = association(samples_dataset)
-    diff['wgan'] = association_difference(association_real, association_wgan)
-    samples_dataset = Dataset(None, None, samples_ctgan, complete_dataset.info, None)
-    association_ctgan = association(samples_dataset)
-    diff['ctgan'] = association_difference(association_real, association_ctgan)
-    samples_dataset = Dataset(None, None, samples_tgan, complete_dataset.info, None)
-    association_tgan = association(samples_dataset)
-    diff['tgan'] = association_difference(association_real, association_tgan)
+    file_path = os.path.join(base_path, 'wgan_{0}_association.csv'.format(dataset))
+    if os.path.exists(file_path):
+        association_wgan = pd.read_csv(file_path)
+        association_wgan = association_wgan.iloc[:, 1:]
+        association_wgan = association_wgan.set_index(association_wgan.columns)
+    else:
+        samples_wgan = complete_dataset.samples.get('wgan')
+        samples_dataset = Dataset(None, None, samples_wgan, complete_dataset.info, None)
+        association_wgan = association(samples_dataset)
+        association_wgan.to_csv(os.path.join(base_path, 'wgan_{0}_association.csv'.format(dataset)))
+    diff['wgan'] = association_difference(association_real=association_real,
+                                          association_samples=association_wgan)
+
+    file_path = os.path.join(base_path, 'ctgan_{0}_association.csv'.format(dataset))
+    if os.path.exists(file_path):
+        association_ctgan = pd.read_csv(file_path)
+        association_ctgan = association_ctgan.iloc[:, 1:]
+        association_ctgan = association_ctgan.set_index(association_ctgan.columns)
+    else:
+        samples_ctgan = complete_dataset.samples.get('ctgan')
+        samples_dataset = Dataset(None, None, samples_ctgan, complete_dataset.info, None)
+        association_ctgan = association(samples_dataset)
+        association_ctgan.to_csv(os.path.join(base_path, 'ctgan_{0}_association.csv'.format(dataset)))
+    diff['ctgan'] = association_difference(association_real=association_real,
+                                           association_samples=association_ctgan)
+
+    file_path = os.path.join(base_path, 'tgan_{0}_association.csv'.format(dataset))
+    if pass_tgan:
+        if os.path.exists(file_path):
+            association_tgan = pd.read_csv(file_path)
+            association_tgan = association_tgan.iloc[:, 1:]
+            association_tgan = association_tgan.set_index(association_tgan.columns)
+        else:
+            samples_tgan = complete_dataset.samples.get('tgan')
+            samples_dataset = Dataset(None, None, samples_tgan, complete_dataset.info, None)
+            association_tgan = association(samples_dataset)
+            association_tgan.to_csv(os.path.join(base_path, 'tgan_{0}_association.csv'.format(dataset)))
+        diff['tgan'] = association_difference(association_real=association_real,
+                                              association_samples=association_tgan)
 
     mask = np.triu(np.ones_like(association_real, dtype=np.bool))
-
     colormap = sns.diverging_palette(20, 220, n=256)
+    print(association_ctgan)
 
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(20, 6))
+    if pass_tgan:
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(20, 6))
+    else:
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 6))
     cbar_ax = fig.add_axes([.95, .5, .02, .4])
 
     ax1.set_title('Real')
     ax1.set_aspect('equal')
-
     chart = sns.heatmap(association_real,
                 vmin=-1,
                 vmax=None,
@@ -158,18 +199,19 @@ def plot_all_association(complete_dataset, dataset, force=True):
                 ax=ax3,
                 cbar=False)
 
-    ax4.set_title('TGAN')
-    ax4.set_aspect('equal')
+    if pass_tgan:
+        ax4.set_title('TGAN')
+        ax4.set_aspect('equal')
 
-    sns.heatmap(association_tgan,
-                vmin=-1,
-                vmax=None,
-                mask=mask,
-                annot=False,
-                cmap=colormap,
-                ax=ax4,
-                cbar=True,
-                cbar_ax=cbar_ax)
+        sns.heatmap(association_tgan,
+                    vmin=-1,
+                    vmax=None,
+                    mask=mask,
+                    annot=False,
+                    cmap=colormap,
+                    ax=ax4,
+                    cbar=True,
+                    cbar_ax=cbar_ax)
 
     plt.subplots_adjust(wspace=0.1)
     plt.tight_layout()
@@ -183,6 +225,9 @@ def plot_all_association(complete_dataset, dataset, force=True):
     if os.path.isfile(filepath) and force:
         os.remove(filepath)
 
-    save_json(diff, filepath)
+
     plt.savefig(filepath)
     plt.close()
+
+    filepath = os.path.join(basepath, '{0}_euclidian_distance.json'.format(dataset))
+    save_json(diff, filepath)
